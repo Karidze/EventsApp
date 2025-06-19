@@ -8,9 +8,14 @@ import {
   Alert,
   RefreshControl,
   TextInput,
-  Button,
   TouchableOpacity,
   ScrollView,
+  SafeAreaView,
+  StatusBar,
+  Modal,
+  Dimensions,
+  Platform,
+  Animated,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -19,7 +24,9 @@ import {
   fetchAllCategories,
 } from '../store/slices/eventsSlice';
 import EventCard from '../components/EventCard';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import Ionicons from '@expo/vector-icons/Ionicons';
+
+const { width } = Dimensions.get('window');
 
 const HomeScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -28,29 +35,23 @@ const HomeScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
+  const slideAnim = useState(new Animated.Value(-width))[0];
 
-  // Загрузка всех доступных категорий при монтировании компонента
   useEffect(() => {
     dispatch(fetchAllCategories());
   }, [dispatch]);
 
-  // Функция для загрузки ивентов с возможностью фильтрации
   const loadEvents = useCallback((query = '', categories = []) => {
     dispatch(fetchEvents({ searchQuery: query, selectedCategoryIds: categories }));
   }, [dispatch]);
 
-  // Загрузка ивентов при изменении запроса поиска или выбранных категорий
   useEffect(() => {
     const handler = setTimeout(() => {
       loadEvents(searchQuery, selectedCategoryIds);
     }, 300);
-
-    return () => {
-      clearTimeout(handler);
-    };
+    return () => clearTimeout(handler);
   }, [searchQuery, selectedCategoryIds, loadEvents]);
 
-  // Обработка ошибок
   useEffect(() => {
     if (error) {
       Alert.alert('Error Loading Events', error);
@@ -58,11 +59,35 @@ const HomeScreen = ({ navigation }) => {
     }
   }, [error, dispatch]);
 
-  const handleEventPress = (event) => {
-    Alert.alert('Event Selected', `You selected event: ${event.title}`);
+  const openFilterModal = () => {
+    setIsFilterModalVisible(true);
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
   };
 
-  // --- Логика для выбора нескольких категорий по ID ---
+  const closeFilterModal = () => {
+    Animated.timing(slideAnim, {
+      toValue: -width,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => setIsFilterModalVisible(false));
+  };
+
+  const handleEventPress = (event) => {
+    navigation.navigate('EventDetail', { eventId: event.id });
+  };
+
+  const handleBookmarkToggle = (event) => {
+    Alert.alert('Bookmark Toggle', `Toggle bookmark for: ${event.title}`);
+  };
+
+  const handleCommentsPress = (event) => {
+    navigation.navigate('CommentsScreen', { eventId: event.id, eventTitle: event.title });
+  };
+
   const handleCategoryToggle = (categoryId) => {
     if (categoryId === 'All') {
       setSelectedCategoryIds([]);
@@ -78,19 +103,28 @@ const HomeScreen = ({ navigation }) => {
   const isAllActive = selectedCategoryIds.length === 0;
 
   const renderEventCard = ({ item }) => (
-    <EventCard event={item} onPress={handleEventPress} allCategories={allCategories} />
+    <EventCard
+      event={item}
+      onPress={handleEventPress}
+      onBookmarkToggle={handleBookmarkToggle}
+      onCommentsPress={handleCommentsPress}
+    />
   );
 
-  // Фильтруем категории для отображения в быстром поиске (только родительские)
-  const topLevelCategories = Array.isArray(allCategories)
-    ? allCategories.filter(cat => cat.parent_id === null)
-    : [];
+  
+  const topLevelCategories = Array.isArray(allCategories) ? allCategories : [];
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerContainer}>
+    <SafeAreaView style={styles.safeAreaContainer}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFF8F0" />
+
+      <View style={styles.header}>
         <Text style={styles.headerTitle}>Upcoming Events</Text>
+
         <View style={styles.searchFilterContainer}>
+          <TouchableOpacity style={styles.filterButtonInsideSearch} onPress={openFilterModal}>
+            <Ionicons name="filter-outline" size={24} color="#555" />
+          </TouchableOpacity>
           <TextInput
             style={styles.searchInput}
             placeholder="Search events (e.g., 'Tech Kyiv')"
@@ -98,55 +132,34 @@ const HomeScreen = ({ navigation }) => {
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
-          <TouchableOpacity
-            style={styles.filterIconContainer}
-            onPress={() => setIsFilterModalVisible(true)}
-          >
-            <Ionicons name="filter-outline" size={24} color="#555" />
-          </TouchableOpacity>
         </View>
 
-        {/* Категории - горизонтальное прокручиваемое меню */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.categoriesContainer}
+          style={styles.categoriesScrollView}
           contentContainerStyle={styles.categoriesContent}
         >
-          {/* Кнопка "All" */}
           <TouchableOpacity
-            style={[
-              styles.categoryButton,
-              isAllActive && styles.activeCategoryButton,
-            ]}
+            style={[styles.categoryButton, isAllActive && styles.activeCategoryButton]}
             onPress={() => handleCategoryToggle('All')}
           >
             <Text
-              style={[
-                styles.categoryButtonText,
-                isAllActive && styles.activeCategoryButtonText,
-              ]}
+              style={[styles.categoryButtonText, isAllActive && styles.activeCategoryButtonText]}
             >
               All
             </Text>
           </TouchableOpacity>
-          {/* Динамические категории верхнего уровня из БД */}
           {topLevelCategories.map((category) => {
             const isActive = selectedCategoryIds.includes(category.id);
             return (
               <TouchableOpacity
                 key={category.id}
-                style={[
-                  styles.categoryButton,
-                  isActive && styles.activeCategoryButton,
-                ]}
+                style={[styles.categoryButton, isActive && styles.activeCategoryButton]}
                 onPress={() => handleCategoryToggle(category.id)}
               >
                 <Text
-                  style={[
-                    styles.categoryButtonText,
-                    isActive && styles.activeCategoryButtonText,
-                  ]}
+                  style={[styles.categoryButtonText, isActive && styles.activeCategoryButtonText]}
                 >
                   {category.name}
                 </Text>
@@ -156,16 +169,52 @@ const HomeScreen = ({ navigation }) => {
         </ScrollView>
       </View>
 
-      {/* Модальное окно фильтрации (пока заглушка) */}
-      {isFilterModalVisible && (
-        <View style={styles.filterModalOverlay}>
-          <View style={styles.filterModalContent}>
+      <Modal
+        animationType="none"
+        transparent={true}
+        visible={isFilterModalVisible}
+        onRequestClose={closeFilterModal}
+      >
+        <TouchableOpacity
+          style={styles.filterModalOverlay}
+          activeOpacity={1}
+          onPressOut={closeFilterModal}
+        >
+          <Animated.View style={[styles.filterModalContent, { transform: [{ translateX: slideAnim }] }]}>
+            <TouchableOpacity style={styles.modalBackButton} onPress={closeFilterModal}>
+              <Ionicons name="arrow-back" size={28} color="#555" />
+            </TouchableOpacity>
+
             <Text style={styles.filterModalTitle}>Detailed Filters</Text>
-            {/* Здесь будут ваши элементы фильтрации */}
-            <Button title="Close" onPress={() => setIsFilterModalVisible(false)} />
-          </View>
-        </View>
-      )}
+            <View style={styles.modalCategoryList}>
+              <Text style={styles.modalCategoryHeader}>Filter by Category:</Text>
+              {allCategories.map((category) => (
+                <TouchableOpacity
+                  key={category.id}
+                  style={[
+                    styles.modalCategoryItem,
+                    selectedCategoryIds.includes(category.id) && styles.modalCategoryItemActive,
+                  ]}
+                  onPress={() => handleCategoryToggle(category.id)}
+                >
+                  <Text
+                    style={[
+                      styles.modalCategoryItemText,
+                      selectedCategoryIds.includes(category.id) && styles.modalCategoryItemTextActive,
+                    ]}
+                  >
+                    {category.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity style={styles.closeModalButton} onPress={closeFilterModal}>
+              <Text style={styles.closeModalButtonText}>Apply Filters</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </TouchableOpacity>
+      </Modal>
 
       {isLoading && searchQuery === '' && selectedCategoryIds.length === 0 ? (
         <ActivityIndicator size="large" color="#007AFF" style={styles.loadingSpinner} />
@@ -175,7 +224,7 @@ const HomeScreen = ({ navigation }) => {
         <FlatList
           data={events}
           renderItem={renderEventCard}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -188,78 +237,75 @@ const HomeScreen = ({ navigation }) => {
           }
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeAreaContainer: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#FFF8F0',
     paddingTop: 0,
   },
-  headerContainer: {
-    backgroundColor: '#fff',
-    padding: 15,
-    paddingTop: 40,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+  header: {
+    backgroundColor: '#FFF8F0',
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 25 : 25,
+    paddingBottom: 25,
+    borderBottomWidth: 0,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   headerTitle: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 15,
+    marginBottom: 20,
     textAlign: 'center',
   },
   searchFilterContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 10,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 10,
+    paddingHorizontal: 5,
+  },
+  filterButtonInsideSearch: {
+    padding: 10,
+    marginRight: 5,
   },
   searchInput: {
     flex: 1,
-    height: 45,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    backgroundColor: '#f9f9f9',
+    height: 50,
     fontSize: 16,
     color: '#333',
-    marginRight: 10,
+    paddingHorizontal: 10,
   },
-  filterIconContainer: {
-    padding: 10,
-  },
-  categoriesContainer: {
-    marginBottom: 10,
+  categoriesScrollView: {
+    marginHorizontal: -5,
+    marginTop: 5,
   },
   categoriesContent: {
     paddingHorizontal: 5,
   },
   categoryButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 15,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: 20,
-    backgroundColor: '#e0e0e0',
-    marginHorizontal: 5,
+    backgroundColor: '#FFEBCC',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#FFDDAA',
+    marginHorizontal: 5,
   },
   activeCategoryButton: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+    backgroundColor: '#FF9933',
+    borderColor: '#FF9933',
   },
   categoryButtonText: {
-    color: '#333',
+    color: '#664422',
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   activeCategoryButtonText: {
     color: '#fff',
@@ -278,31 +324,79 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 20,
+    paddingHorizontal: 10,
+    paddingTop: 10,
   },
   filterModalOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 1000,
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
   },
   filterModalContent: {
     backgroundColor: '#fff',
-    borderRadius: 10,
+    borderRadius: 0,
     padding: 20,
-    width: '85%',
-    maxHeight: '80%',
-    elevation: 10,
+    width: width * 0.75,
+    height: '100%',
+    elevation: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
+    shadowOffset: { width: 5, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+  },
+  modalBackButton: {
+    position: 'absolute',
+    top: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 30,
+    left: 10,
+    zIndex: 10,
+    padding: 5,
   },
   filterModalTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
+    marginTop: Platform.OS === 'android' ? StatusBar.currentHeight + 40 : 60,
+    marginBottom: 25,
+    textAlign: 'left',
+    color: '#333',
+  },
+  modalCategoryList: {
     marginBottom: 20,
-    textAlign: 'center',
+  },
+  modalCategoryHeader: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  modalCategoryItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    marginBottom: 8,
+    backgroundColor: '#FFEBCC',
+  },
+  modalCategoryItemActive: {
+    backgroundColor: '#FF9933',
+  },
+  modalCategoryItemText: {
+    fontSize: 16,
+    color: '#664422',
+  },
+  modalCategoryItemTextActive: {
+    color: '#fff',
+  },
+  closeModalButton: {
+    backgroundColor: '#FF9933',
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 'auto',
+  },
+  closeModalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

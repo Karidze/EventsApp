@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
-import Ionicons from 'react-native-vector-icons/Ionicons';
+import Ionicons from '@expo/vector-icons/Ionicons'; 
 import moment from 'moment';
-import 'moment/locale/ru'; 
+import 'moment/locale/en-gb'; 
 
-moment.locale('ru');
+moment.locale('en-gb'); 
 
-const EventCard = ({ event, onPress }) => { 
+const EventCard = ({ event, onPress, onBookmarkToggle, onCommentsPress }) => { 
   const {
     title,
     description,
@@ -17,9 +17,11 @@ const EventCard = ({ event, onPress }) => {
     event_price,
     image_url,
     profiles: organizerProfile,
+    is_bookmarked = false, 
+    comment_count = 0 
   } = event;
 
-  const formattedDate = moment(date).format('D MMMM GG');
+  const formattedDate = moment(date).format('D MMMM YYYY');
   const formattedTime = moment(time, 'HH:mm:ss').format('HH:mm');
 
   const organizerAvatar = organizerProfile?.avatar_url || 'https://via.placeholder.com/50/CCCCCC/FFFFFF?text=ORG';
@@ -35,14 +37,14 @@ const EventCard = ({ event, onPress }) => {
         </Text>
 
         <View style={styles.infoRow}>
-          <Ionicons name="calendar-outline" size={14} color="#555" />
+          <Ionicons name="calendar-outline" size={16} color="#666" />
           <Text style={styles.infoText}>
             {formattedDate} <Text style={{fontWeight: 'bold'}}>at</Text> {formattedTime}
           </Text>
         </View>
 
         <View style={styles.infoRow}>
-          <Ionicons name="location-outline" size={14} color="#555" />
+          <Ionicons name="location-outline" size={16} color="#666" />
           <Text style={styles.infoText}>
             {location}, {city}
           </Text>
@@ -50,14 +52,14 @@ const EventCard = ({ event, onPress }) => {
 
         {event_price > 0 ? (
           <View style={styles.infoRow}>
-            <Ionicons name="pricetag-outline" size={14} color="#555" />
+            <Ionicons name="pricetag-outline" size={16} color="#666" />
             <Text style={styles.infoText}>
               Price: {event_price} UAH
             </Text>
           </View>
         ) : (
           <View style={styles.infoRow}>
-            <Ionicons name="wallet-outline" size={14} color="#555" />
+            <Ionicons name="wallet-outline" size={16} color="#666" />
             <Text style={styles.infoText}>Free</Text>
           </View>
         )}
@@ -68,6 +70,25 @@ const EventCard = ({ event, onPress }) => {
             Organizer: {organizerName}
           </Text>
         </View>
+
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity style={styles.actionButton} onPress={() => onCommentsPress(event)}>
+            <Ionicons name="chatbubble-outline" size={20} color="#007AFF" />
+            <Text style={styles.actionButtonText}>Comments ({comment_count})</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.actionButton} onPress={() => onBookmarkToggle(event)}>
+            <Ionicons
+              name={is_bookmarked ? 'bookmark' : 'bookmark-outline'}
+              size={20}
+              color={is_bookmarked ? '#007AFF' : '#666'}
+            />
+            <Text style={[styles.actionButtonText, is_bookmarked && styles.bookmarkedText]}>
+              {is_bookmarked ? 'Saved' : 'Save Event'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
       </View>
     </TouchableOpacity>
   );
@@ -77,66 +98,91 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    marginVertical: 8,
-    marginHorizontal: 16,
+    marginVertical: 10,
+    marginHorizontal: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 5,
     overflow: 'hidden',
   },
   cardImage: {
     width: '100%',
-    height: 160,
+    height: 180,
     resizeMode: 'cover',
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
   },
   cardContent: {
-    padding: 12,
+    padding: 15,
   },
   cardTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 6,
+    marginBottom: 8,
     color: '#333',
   },
   cardDescription: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#666',
-    marginBottom: 8,
-    lineHeight: 18,
+    marginBottom: 10,
+    lineHeight: 20,
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 3,
+    marginBottom: 5,
   },
   infoText: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#555',
-    marginLeft: 6,
+    marginLeft: 8,
   },
   organizerInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
-    paddingTop: 8,
+    marginTop: 15,
+    paddingTop: 10,
     borderTopWidth: 1,
     borderTopColor: '#eee',
   },
   organizerAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    marginRight: 8,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
     backgroundColor: '#ccc',
   },
   organizerName: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#333',
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 15,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: '#F7F7F7',
+  },
+  actionButtonText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#555',
+    fontWeight: '500',
+  },
+  bookmarkedText: {
+    color: '#007AFF',
   },
 });
 

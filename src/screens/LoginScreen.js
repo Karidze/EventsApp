@@ -41,10 +41,10 @@ const LoginScreen = ({ navigation }) => {
       {/* Логотип */}
       <Image source={require('../assets/logo.png')} style={styles.logo} />
 
-      {/* Заголовок */}
+      {/* заголовок */}
       <Text style={styles.title}>Login</Text>
 
-      {/* Email */}
+      {/* email */}
       <View style={styles.inputUnderlineContainer}>
         <Ionicons name="person-outline" size={20} color="#999" style={styles.icon} />
         <TextInput

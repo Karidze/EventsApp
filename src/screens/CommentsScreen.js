@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-const BookmarksScreen = () => {
+const CommentsScreen = () => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Bookmarks / My Events</Text>
-      <Text style={styles.subtitle}>Here you'll see your bookmarked and created events.</Text>
+      <Text style={styles.title}>Comments Screen</Text>
+      <Text style={styles.subtitle}>This is a placeholder for event comments.</Text>
     </View>
   );
 };
@@ -15,7 +15,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFF8F0', 
+    backgroundColor: '#FFF8F0',
   },
   title: {
     fontSize: 24,
@@ -31,4 +31,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default BookmarksScreen;
+export default CommentsScreen;
