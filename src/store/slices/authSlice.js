@@ -29,7 +29,7 @@ export const initializeSession = createAsyncThunk(
       return session || null;
     } catch (err) {
       console.error("Unhandled error in initializeSession:", err);
-      return rejectWithValue(err.message);
+      return rejectWithValue(err.message || 'Failed to initialize session. Please try again.'); // Переведено
     }
   }
 );
@@ -46,7 +46,7 @@ export const registerUser = createAsyncThunk(
         return rejectWithValue(authError.message);
       }
       if (!authData.user || !authData.session) {
-        return rejectWithValue("Registration successful, but user or session data is missing.");
+        return rejectWithValue("Registration successful, but user or session data is missing."); // Можно перевести при желании
       }
 
       const newUser = authData.user;
@@ -62,14 +62,14 @@ export const registerUser = createAsyncThunk(
 
       if (profileError) {
         console.error("Error creating user profile after registration:", profileError);
-        return rejectWithValue("Регистрация пользователя успешна, но создание профиля не удалось: " + profileError.message);
+        return rejectWithValue("User registration successful, but profile creation failed: " + profileError.message); // Переведено
       }
       
       dispatch(fetchUserProfile(newUser.id));
       return authData.session;
     } catch (err) {
       console.error("Unhandled error in registerUser:", err);
-      return rejectWithValue(err.message);
+      return rejectWithValue(err.message || 'Registration failed. Please try again.'); // Переведено
     }
   }
 );
@@ -86,7 +86,7 @@ export const loginUser = createAsyncThunk(
         return rejectWithValue(authError.message);
       }
       if (!authData.user || !authData.session) {
-        return rejectWithValue("Login successful, but user or session data is missing.");
+        return rejectWithValue("Login successful, but user or session data is missing."); // Можно перевести при желании
       }
 
       const loggedInUser = authData.user;
@@ -94,7 +94,7 @@ export const loginUser = createAsyncThunk(
       return authData.session;
     } catch (err) {
       console.error("Unhandled error in loginUser:", err);
-      return rejectWithValue(err.message);
+      return rejectWithValue(err.message || 'Login failed. Please check your credentials.'); // Переведено
     }
   }
 );
@@ -111,7 +111,7 @@ export const logoutUser = createAsyncThunk(
       return true;
     } catch (err) {
       console.error("Unhandled error in logoutUser:", err);
-      return rejectWithValue(err.message);
+      return rejectWithValue(err.message || 'Logout failed. Please try again.'); // Переведено
     }
   }
 );
@@ -151,7 +151,7 @@ const authSlice = createSlice({
         state.user = null;
         state.session = null;
         state.isAuthenticated = false;
-        state.error = action.payload || 'Failed to initialize session.';
+        state.error = action.payload || 'Failed to initialize session.'; // Переведено
       })
       .addCase(registerUser.pending, (state) => {
         state.isLoading = true;
@@ -168,7 +168,7 @@ const authSlice = createSlice({
         state.user = null;
         state.session = null;
         state.isAuthenticated = false;
-        state.error = action.payload || 'Registration failed.';
+        state.error = action.payload || 'Registration failed.'; // Переведено
       })
       .addCase(loginUser.pending, (state) => {
         state.isLoading = true;
@@ -185,7 +185,7 @@ const authSlice = createSlice({
         state.user = null;
         state.session = null;
         state.isAuthenticated = false;
-        state.error = action.payload || 'Login failed.';
+        state.error = action.payload || 'Login failed.'; // Переведено
       })
       .addCase(logoutUser.pending, (state) => {
         state.isLoading = true;
@@ -199,7 +199,7 @@ const authSlice = createSlice({
       })
       .addCase(logoutUser.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload || 'Logout failed.';
+        state.error = action.payload || 'Logout failed.'; // Переведено
         state.user = null;
         state.session = null;
         state.isAuthenticated = false;

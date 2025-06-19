@@ -1,7 +1,7 @@
 import React from 'react';
 import { ActivityIndicator, View, StyleSheet, Text } from 'react-native';
 
-const LoadingSpinner = ({ text = "Загрузка..." }) => (
+const LoadingSpinner = ({ text = "Loading..." }) => ( // Переведено
   <View style={styles.loadingContainer}>
     <ActivityIndicator size="large" color="#0000ff" />
     <Text style={styles.loadingText}>{text}</Text>

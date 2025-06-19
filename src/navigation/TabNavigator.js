@@ -1,4 +1,3 @@
-// src/navigation/TabNavigator.js
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -38,27 +37,27 @@ const TabNavigator = () => {
       <Tab.Screen
         name="SearchEvents"
         component={HomeScreen}
-        options={{ title: 'Поиск' }}
+        options={{ title: 'Search' }} 
       />
       <Tab.Screen
         name="Map"
         component={MapScreen}
-        options={{ title: 'Карта' }}
+        options={{ title: 'Map' }}
       />
       <Tab.Screen
         name="CreateEvent"
         component={CreateEventScreen}
-        options={{ title: 'Создать' }}
+        options={{ title: 'Create' }} 
       />
       <Tab.Screen
         name="Bookmarks"
         component={BookmarksScreen}
-        options={{ title: 'Закладки' }}
+        options={{ title: 'Bookmarks' }} 
       />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
-        options={{ title: 'Профиль' }}
+        options={{ title: 'Profile' }} 
       />
     </Tab.Navigator>
   );
