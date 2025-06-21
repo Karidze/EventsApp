@@ -1,11 +1,25 @@
+// EventDetailScreen.js (пример, замени своим реальным кодом)
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, Button, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native'; // Импортируем useNavigation
 
-const EventDetailScreen = () => {
+const EventDetailScreen = ({ route }) => {
+  const navigation = useNavigation(); // Получаем объект навигации
+  const { eventId, eventTitle } = route.params;
+
+  const handleOpenComments = () => {
+    // Открываем CommentsScreen как модальный экран
+    navigation.navigate('CommentsModal', { eventId, eventTitle });
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Event Details Screen</Text>
-      <Text style={styles.subtitle}>This is a placeholder for event details.</Text>
+      <Text>Event Details for: {eventTitle}</Text>
+      <Text>Event ID: {eventId}</Text>
+
+      <Button title="Open Comments" onPress={handleOpenComments} />
+
+      {/* Другой контент EventDetailScreen */}
     </View>
   );
 };
@@ -16,18 +30,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#FFF8F0',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#333',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    paddingHorizontal: 20,
   },
 });
 

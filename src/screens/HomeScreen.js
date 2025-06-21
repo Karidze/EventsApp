@@ -18,11 +18,7 @@ import {
   Animated,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  fetchEvents,
-  clearEventsError,
-  fetchAllCategories,
-} from '../store/slices/eventsSlice';
+import { fetchEvents, clearEventsError, fetchAllCategories } from '../store/slices/eventsSlice';
 import EventCard from '../components/EventCard';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
@@ -41,9 +37,12 @@ const HomeScreen = ({ navigation }) => {
     dispatch(fetchAllCategories());
   }, [dispatch]);
 
-  const loadEvents = useCallback((query = '', categories = []) => {
-    dispatch(fetchEvents({ searchQuery: query, selectedCategoryIds: categories }));
-  }, [dispatch]);
+  const loadEvents = useCallback(
+    (query = '', categories = []) => {
+      dispatch(fetchEvents({ searchQuery: query, selectedCategoryIds: categories }));
+    },
+    [dispatch]
+  );
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -85,7 +84,10 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const handleCommentsPress = (event) => {
-    navigation.navigate('CommentsScreen', { eventId: event.id, eventTitle: event.title });
+    navigation.navigate('Comments', {
+      eventId: event.id,
+      eventTitle: event.title,
+    });
   };
 
   const handleCategoryToggle = (categoryId) => {
@@ -102,16 +104,13 @@ const HomeScreen = ({ navigation }) => {
 
   const isAllActive = selectedCategoryIds.length === 0;
 
-  const renderEventCard = ({ item }) => (
-    <EventCard
-      event={item}
-      onPress={handleEventPress}
-      onBookmarkToggle={handleBookmarkToggle}
-      onCommentsPress={handleCommentsPress}
-    />
+  const renderEventCard = useCallback(
+    ({ item }) => (
+      <EventCard event={item} onPress={handleEventPress} onBookmarkToggle={handleBookmarkToggle} onCommentsPress={handleCommentsPress} />
+    ),
+    [handleEventPress, handleBookmarkToggle, handleCommentsPress]
   );
 
-  
   const topLevelCategories = Array.isArray(allCategories) ? allCategories : [];
 
   return (
@@ -144,11 +143,7 @@ const HomeScreen = ({ navigation }) => {
             style={[styles.categoryButton, isAllActive && styles.activeCategoryButton]}
             onPress={() => handleCategoryToggle('All')}
           >
-            <Text
-              style={[styles.categoryButtonText, isAllActive && styles.activeCategoryButtonText]}
-            >
-              All
-            </Text>
+            <Text style={[styles.categoryButtonText, isAllActive && styles.activeCategoryButtonText]}>All</Text>
           </TouchableOpacity>
           {topLevelCategories.map((category) => {
             const isActive = selectedCategoryIds.includes(category.id);
@@ -158,28 +153,15 @@ const HomeScreen = ({ navigation }) => {
                 style={[styles.categoryButton, isActive && styles.activeCategoryButton]}
                 onPress={() => handleCategoryToggle(category.id)}
               >
-                <Text
-                  style={[styles.categoryButtonText, isActive && styles.activeCategoryButtonText]}
-                >
-                  {category.name}
-                </Text>
+                <Text style={[styles.categoryButtonText, isActive && styles.activeCategoryButtonText]}>{category.name}</Text>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
       </View>
 
-      <Modal
-        animationType="none"
-        transparent={true}
-        visible={isFilterModalVisible}
-        onRequestClose={closeFilterModal}
-      >
-        <TouchableOpacity
-          style={styles.filterModalOverlay}
-          activeOpacity={1}
-          onPressOut={closeFilterModal}
-        >
+      <Modal animationType="none" transparent={true} visible={isFilterModalVisible} onRequestClose={closeFilterModal}>
+        <TouchableOpacity style={styles.filterModalOverlay} activeOpacity={1} onPressOut={closeFilterModal}>
           <Animated.View style={[styles.filterModalContent, { transform: [{ translateX: slideAnim }] }]}>
             <TouchableOpacity style={styles.modalBackButton} onPress={closeFilterModal}>
               <Ionicons name="arrow-back" size={28} color="#555" />
@@ -191,10 +173,7 @@ const HomeScreen = ({ navigation }) => {
               {allCategories.map((category) => (
                 <TouchableOpacity
                   key={category.id}
-                  style={[
-                    styles.modalCategoryItem,
-                    selectedCategoryIds.includes(category.id) && styles.modalCategoryItemActive,
-                  ]}
+                  style={[styles.modalCategoryItem, selectedCategoryIds.includes(category.id) && styles.modalCategoryItemActive]}
                   onPress={() => handleCategoryToggle(category.id)}
                 >
                   <Text

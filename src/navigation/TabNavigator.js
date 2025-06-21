@@ -1,8 +1,8 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack'; 
-import Ionicons from '@expo/vector-icons/Ionicons'; 
-import { View, Text } from 'react-native'; 
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { View, Text, Platform, StatusBar } from 'react-native';
 
 import HomeScreen from '../screens/HomeScreen';
 import MapScreen from '../screens/MapScreen';
@@ -10,17 +10,8 @@ import CreateEventScreen from '../screens/CreateEventScreen';
 import BookmarksScreen from '../screens/BookmarksScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 
-
-const EventDetailScreen = () => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF8F0' }}>
-    <Text style={{ fontSize: 20 }}>Event Details Screen</Text>
-  </View>
-);
-const CommentsScreen = () => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF8F0' }}>
-    <Text style={{ fontSize: 20 }}>Comments Screen</Text>
-  </View>
-);
+import EventDetailScreen from '../screens/EventDetailScreen';
+import CommentsScreen from '../screens/CommentsScreen';
 
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
@@ -30,7 +21,11 @@ function HomeStackNavigator() {
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
       <HomeStack.Screen name="Home" component={HomeScreen} />
       <HomeStack.Screen name="EventDetail" component={EventDetailScreen} />
-      <HomeStack.Screen name="CommentsScreen" component={CommentsScreen} />
+      <HomeStack.Screen
+        name="Comments"
+        component={CommentsScreen}
+        options={{ presentation: 'modal' }}
+      />
     </HomeStack.Navigator>
   );
 }
@@ -41,7 +36,7 @@ const TabNavigator = () => {
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
-          if (route.name === 'HomeTab') { // Renamed to HomeTab to represent the stack
+          if (route.name === 'HomeTab') {
             iconName = focused ? 'search' : 'search-outline';
           } else if (route.name === 'Map') {
             iconName = focused ? 'map' : 'map-outline';

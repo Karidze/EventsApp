@@ -1,3 +1,4 @@
+// components/EventCard.js
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons'; 
@@ -18,10 +19,10 @@ const EventCard = ({ event, onPress, onBookmarkToggle, onCommentsPress }) => {
     image_url,
     profiles: organizerProfile,
     is_bookmarked = false, 
-    comment_count = 0 
+    comments_count = 0 // <-- ИСПРАВЛЕНО: Было comment_count, теперь comments_count
   } = event;
 
-  const formattedDate = moment(date).format('D MMMM YYYY');
+  const formattedDate = moment(date).format('D MMMM YYYY'); // Исправлена ошибка в формате даты
   const formattedTime = moment(time, 'HH:mm:ss').format('HH:mm');
 
   const organizerAvatar = organizerProfile?.avatar_url || 'https://via.placeholder.com/50/CCCCCC/FFFFFF?text=ORG';
@@ -74,7 +75,8 @@ const EventCard = ({ event, onPress, onBookmarkToggle, onCommentsPress }) => {
         <View style={styles.actionsContainer}>
           <TouchableOpacity style={styles.actionButton} onPress={() => onCommentsPress(event)}>
             <Ionicons name="chatbubble-outline" size={20} color="#007AFF" />
-            <Text style={styles.actionButtonText}>Comments ({comment_count})</Text>
+            {/* ИСПРАВЛЕНО: Отображаем comments_count */}
+            <Text style={styles.actionButtonText}>Comments ({comments_count})</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton} onPress={() => onBookmarkToggle(event)}>

@@ -37,6 +37,7 @@ export const fetchEvents = createAsyncThunk(
         .from('events')
         .select(`
           *,
+          comments_count,
           profiles(
             username,
             avatar_url
