@@ -1,3 +1,4 @@
+// AppNavigator.js
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -6,6 +7,8 @@ import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
 
 import AuthNavigator from './AuthStack';
 import TabNavigator from './TabNavigator';
+import CommentsScreen from '../screens/CommentsScreen';
+import EventDetailScreen from '../screens/EventDetailScreen'; // <-- ИМПОРТИРУЕМ EventDetailScreen
 
 import useAuthSession from '../hooks/useAuthSession';
 
@@ -33,6 +36,22 @@ const AppNavigator = () => {
         ) : (
           <Stack.Screen name="Auth" component={AuthNavigator} />
         )}
+        <Stack.Screen
+          name="Comments"
+          component={CommentsScreen}
+          options={{
+            presentation: 'modal',
+            headerShown: false,
+          }}
+        />
+        {/* <-- ДОБАВЛЯЕМ EventDetailScreen СЮДА */}
+        <Stack.Screen
+          name="EventDetail" // <-- ИМЯ ДОЛЖНО СОВПАДАТЬ С navigation.navigate('EventDetail')
+          component={EventDetailScreen}
+          options={{
+            headerShown: false, // Если не хотите показывать заголовок навигатора на этом экране
+          }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
