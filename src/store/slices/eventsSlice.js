@@ -31,18 +31,31 @@ export const fetchAllCategories = createAsyncThunk(
 
 export const fetchEvents = createAsyncThunk(
   'events/fetchEvents',
-  async ({ searchQuery = '', selectedCategoryIds = [] }, { rejectWithValue }) => {
+  async (
+    {
+      searchQuery = '',
+      selectedCategoryIds = [],
+      city = '',
+      date = null,
+      minTime = null, // New: minimum time
+      maxTime = null, // New: maximum time
+      minPrice = 0,
+      maxPrice = 1000,
+    },
+    { rejectWithValue }
+  ) => {
     try {
       let query = supabase
         .from('events')
-        .select(`
+        .select(
+          `
           *,
-          comments_count,
           profiles(
             username,
             avatar_url
           )
-        `);
+          `
+        );
 
       if (selectedCategoryIds.length > 0) {
         query = query.overlaps('category_ids', selectedCategoryIds);
@@ -52,12 +65,35 @@ export const fetchEvents = createAsyncThunk(
         const searchWords = searchQuery.trim().split(/\s+/).filter(Boolean);
         const searchConditions = searchWords.map(word => {
           const pattern = `%${word}%`;
-          return `title.ilike.${pattern},description.ilike.${pattern},city.ilike.${pattern},location.ilike.${pattern}`;
+          return `title.ilike.${pattern},description.ilike.${pattern},location.ilike.${pattern}`;
         }).join(',');
 
         if (searchConditions) {
           query = query.or(searchConditions);
         }
+      }
+
+      if (city) {
+        query = query.ilike('city', `%${city}%`);
+      }
+
+      if (date) {
+        query = query.eq('date', date);
+      }
+
+      // Time range filtering
+      if (minTime) {
+        query = query.gte('time', minTime);
+      }
+      if (maxTime) {
+        query = query.lte('time', maxTime);
+      }
+
+      if (minPrice !== null && minPrice !== undefined) {
+        query = query.gte('event_price', minPrice);
+      }
+      if (maxPrice !== null && maxPrice !== undefined) {
+        query = query.lte('event_price', maxPrice);
       }
 
       query = query
