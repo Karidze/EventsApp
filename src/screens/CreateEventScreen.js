@@ -8,7 +8,6 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
-  Button,
   Platform,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
@@ -16,17 +15,19 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { supabase } from '../config/supabase';
 import { fetchAllCategories } from '../store/slices/eventsSlice';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-const MAX_CATEGORIES = 5;
+const MAX_CATEGORIES = 5; // Константа определена корректно
 
 const CreateEventScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const { allCategories } = useSelector((state) => state.events);
-  const { session, user, isAuthenticated } = useSelector((state) => state.auth); 
+  const { session } = useSelector((state) => state.auth);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState(new Date());
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(null);
   const [time, setTime] = useState(new Date());
   const [location, setLocation] = useState('');
   const [city, setCity] = useState('');
@@ -35,17 +36,32 @@ const CreateEventScreen = ({ navigation }) => {
   const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showStartDatePicker, setShowStartDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
   useEffect(() => {
     dispatch(fetchAllCategories());
   }, [dispatch]);
 
-  const onChangeDate = (event, selectedDate) => {
-    const currentDate = selectedDate || date;
-    setShowDatePicker(Platform.OS === 'ios');
-    setDate(currentDate);
+  const onChangeStartDate = (event, selectedDate) => {
+    const currentDate = selectedDate || startDate;
+    setShowStartDatePicker(Platform.OS === 'ios');
+    if (endDate && currentDate > endDate) {
+      setEndDate(currentDate);
+    }
+    setStartDate(currentDate);
+  };
+
+  const onChangeEndDate = (event, selectedDate) => {
+    const currentDate = selectedDate || endDate;
+    setShowEndDatePicker(Platform.OS === 'ios');
+    if (currentDate < startDate) {
+      Alert.alert('Invalid Date', 'End date cannot be earlier than start date.');
+      setEndDate(startDate);
+    } else {
+      setEndDate(currentDate);
+    }
   };
 
   const onChangeTime = (event, selectedTime) => {
@@ -54,7 +70,8 @@ const CreateEventScreen = ({ navigation }) => {
     setTime(currentTime);
   };
 
-  const showDatepicker = () => setShowDatePicker(true);
+  const showStartDatepicker = () => setShowStartDatePicker(true);
+  const showEndDatePickerpicker = () => setShowEndDatePicker(true);
   const showTimepicker = () => setShowTimePicker(true);
 
   const handleCategoryToggle = (categoryId) => {
@@ -83,6 +100,11 @@ const CreateEventScreen = ({ navigation }) => {
       return;
     }
 
+    if (endDate && endDate < startDate) {
+      Alert.alert('Validation Error', 'End date cannot be earlier than start date.');
+      return;
+    }
+
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -92,7 +114,8 @@ const CreateEventScreen = ({ navigation }) => {
             organizer_id: session.user.id,
             title: title,
             description: description,
-            date: date.toISOString().split('T')[0],
+            start_date: startDate.toISOString().split('T')[0],
+            end_date: endDate ? endDate.toISOString().split('T')[0] : null,
             time: time.toTimeString().split(' ')[0],
             location: location,
             city: city,
@@ -109,12 +132,15 @@ const CreateEventScreen = ({ navigation }) => {
       }
 
       Alert.alert('Success', 'Event created successfully!');
-      // Clear the form
       setTitle('');
       setDescription('');
-      setDate(new Date());
+      setStartDate(new Date());
+      setEndDate(null);
       setTime(new Date());
       setLocation('');
+      setShowStartDatePicker(false);
+      setShowEndDatePicker(false);
+      setShowTimePicker(false);
       setCity('');
       setEventPrice('');
       setImageUrl('');
@@ -130,44 +156,79 @@ const CreateEventScreen = ({ navigation }) => {
     }
   };
 
+  const formatDisplayDate = (dateToFormat) => {
+    return dateToFormat ? dateToFormat.toLocaleDateString() : 'Select Date';
+  };
+
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.header}>Create New Event</Text>
+    <ScrollView contentContainerStyle={styles.scrollViewContent} style={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Ionicons name="arrow-back" size={24} color="#333" />
+      </TouchableOpacity>
+      <Text style={styles.title}>Create New Event</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Event Title"
-        placeholderTextColor="#888"
-        value={title}
-        onChangeText={setTitle}
-      />
-      <TextInput
-        style={[styles.input, styles.descriptionInput]}
-        placeholder="Description"
-        placeholderTextColor="#888"
-        value={description}
-        onChangeText={setDescription}
-        multiline
-        numberOfLines={4}
-      />
+      <View style={styles.inputUnderlineContainer}>
+        <Ionicons name="pricetag-outline" size={20} color="#999" style={styles.icon} />
+        <TextInput
+          style={styles.inputUnderline}
+          placeholder="Event Title"
+          placeholderTextColor="#aaa"
+          value={title}
+          onChangeText={setTitle}
+        />
+      </View>
 
-      <View style={styles.dateTimeContainer}>
-        <TouchableOpacity onPress={showDatepicker} style={styles.dateTimeButton}>
-          <Ionicons name="calendar-outline" size={20} color="#007AFF" />
-          <Text style={styles.dateTimeText}>{date.toLocaleDateString()}</Text>
+      <View style={styles.inputUnderlineContainer}>
+        <Ionicons name="document-text-outline" size={20} color="#999" style={styles.icon} />
+        <TextInput
+          style={[styles.inputUnderline, styles.descriptionInput]}
+          placeholder="Description"
+          placeholderTextColor="#aaa"
+          value={description}
+          onChangeText={setDescription}
+          multiline
+          numberOfLines={4}
+          scrollEnabled={false}
+          textAlignVertical='top'
+        />
+      </View>
+
+      <Text style={styles.sectionHeader}>Event Dates:</Text>
+      <View style={styles.dateRangeContainer}>
+        <TouchableOpacity onPress={showStartDatepicker} style={styles.dateTimeButton}>
+          <Ionicons name="calendar-outline" size={20} color="#333" />
+          <Text style={styles.dateTimeText}>From: {formatDisplayDate(startDate)}</Text>
         </TouchableOpacity>
-        {showDatePicker && (
+        {showStartDatePicker && (
           <DateTimePicker
-            testID="datePicker"
-            value={date}
+            testID="startDatePicker"
+            value={startDate}
             mode="date"
             display="default"
-            onChange={onChangeDate}
+            onChange={onChangeStartDate}
+            minimumDate={new Date()}
           />
         )}
 
+        <TouchableOpacity onPress={showEndDatePickerpicker} style={styles.dateTimeButton}>
+          <Ionicons name="calendar-outline" size={20} color="#333" />
+          <Text style={styles.dateTimeText}>To: {formatDisplayDate(endDate || startDate)}</Text>
+        </TouchableOpacity>
+        {showEndDatePicker && (
+          <DateTimePicker
+            testID="endDatePicker"
+            value={endDate || startDate}
+            mode="date"
+            display="default"
+            onChange={onChangeEndDate}
+            minimumDate={startDate}
+          />
+        )}
+      </View>
+
+      <View style={styles.dateTimeContainer}>
         <TouchableOpacity onPress={showTimepicker} style={styles.dateTimeButton}>
-          <Ionicons name="time-outline" size={20} color="#007AFF" />
+          <Ionicons name="time-outline" size={20} color="#333" />
           <Text style={styles.dateTimeText}>{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
         </TouchableOpacity>
         {showTimePicker && (
@@ -181,35 +242,50 @@ const CreateEventScreen = ({ navigation }) => {
         )}
       </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Location (e.g., 'Exhibition Center')"
-        placeholderTextColor="#888"
-        value={location}
-        onChangeText={setLocation}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="City (e.g., 'Kyiv')"
-        placeholderTextColor="#888"
-        value={city}
-        onChangeText={setCity}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Price (optional, e.g., '150' or leave empty for free)"
-        placeholderTextColor="#888"
-        keyboardType="numeric"
-        value={eventPrice}
-        onChangeText={setEventPrice}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Image URL (optional)"
-        placeholderTextColor="#888"
-        value={imageUrl}
-        onChangeText={setImageUrl}
-      />
+      <View style={styles.inputUnderlineContainer}>
+        <Ionicons name="location-outline" size={20} color="#999" style={styles.icon} />
+        <TextInput
+          style={styles.inputUnderline}
+          placeholder="Location (e.g., 'Exhibition Center')"
+          placeholderTextColor="#aaa"
+          value={location}
+          onChangeText={setLocation}
+        />
+      </View>
+
+      <View style={styles.inputUnderlineContainer}>
+        <Ionicons name="business-outline" size={20} color="#999" style={styles.icon} />
+        <TextInput
+          style={styles.inputUnderline}
+          placeholder="City (e.g., 'Kyiv')"
+          placeholderTextColor="#aaa"
+          value={city}
+          onChangeText={setCity}
+        />
+      </View>
+
+      <View style={styles.inputUnderlineContainer}>
+        <MaterialCommunityIcons name="currency-usd" size={20} color="#999" style={styles.icon} />
+        <TextInput
+          style={styles.inputUnderline}
+          placeholder="Price (optional, e.g., '150' or leave empty for free)"
+          placeholderTextColor="#aaa"
+          keyboardType="numeric"
+          value={eventPrice}
+          onChangeText={setEventPrice}
+        />
+      </View>
+
+      <View style={styles.inputUnderlineContainer}>
+        <Ionicons name="image-outline" size={20} color="#999" style={styles.icon} />
+        <TextInput
+          style={styles.inputUnderline}
+          placeholder="Image URL (optional)"
+          placeholderTextColor="#aaa"
+          value={imageUrl}
+          onChangeText={setImageUrl}
+        />
+      </View>
 
       <Text style={styles.sectionHeader}>
         Select Categories (Max {MAX_CATEGORIES}):
@@ -217,6 +293,7 @@ const CreateEventScreen = ({ navigation }) => {
       <View style={styles.categoriesGrid}>
         {Array.isArray(allCategories) && allCategories.map((category) => {
           const isSelected = selectedCategoryIds.includes(category.id);
+          // Исправлено: MAX_CATEGories -> MAX_CATEGORIES
           const isDisabled = !isSelected && selectedCategoryIds.length >= MAX_CATEGORIES;
           return (
             <TouchableOpacity
@@ -258,82 +335,110 @@ const CreateEventScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#FFF8F0',
   },
-  header: {
+  scrollViewContent: {
+    paddingHorizontal: 30,
+    paddingTop: 60,
+    alignItems: 'center',
+    paddingBottom: 40,
+  },
+  backButton: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    zIndex: 1,
+  },
+  title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 25,
+    fontWeight: '500',
     textAlign: 'center',
+    marginBottom: 30,
+    color: '#333',
   },
-  input: {
-    backgroundColor: '#fff',
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 15,
+  inputUnderlineContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderColor: '#ccc',
+    marginBottom: 20,
+    paddingVertical: 6,
+    width: '100%',
+  },
+  icon: {
+    marginRight: 10,
+  },
+  inputUnderline: {
+    flex: 1,
     fontSize: 16,
     color: '#333',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    minHeight: 40,
+    paddingVertical: 0,
   },
   descriptionInput: {
-    height: 120,
+    height: 100,
     textAlignVertical: 'top',
   },
   dateTimeContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 15,
+    marginBottom: 20,
+    width: '100%',
+  },
+  dateRangeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    width: '100%',
+    flexWrap: 'wrap',
   },
   dateTimeButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 15,
+    backgroundColor: '#FFEBCC',
+    borderRadius: 20,
+    paddingVertical: 15,
+    paddingHorizontal: 15,
     flex: 1,
     marginHorizontal: 5,
     justifyContent: 'center',
+    minWidth: '45%',
+    marginBottom: 10,
   },
   dateTimeText: {
     marginLeft: 10,
     fontSize: 16,
     color: '#333',
+    fontWeight: 'bold',
   },
   sectionHeader: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '500',
     color: '#555',
     marginBottom: 10,
     marginTop: 15,
+    width: '100%',
+    textAlign: 'left',
   },
   categoriesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     marginBottom: 20,
     justifyContent: 'flex-start',
+    width: '100%',
   },
   categoryButton: {
     paddingVertical: 10,
     paddingHorizontal: 15,
     borderRadius: 20,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: '#FFEBCC',
     margin: 5,
     borderWidth: 1,
     borderColor: '#ccc',
   },
   selectedCategoryButton: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+    backgroundColor: '#FF9933',
+    borderColor: '#FF9933',
   },
   disabledCategoryButton: {
     backgroundColor: '#f0f0f0',
@@ -348,12 +453,13 @@ const styles = StyleSheet.create({
     color: '#aaa',
   },
   createButton: {
-    backgroundColor: '#28a745',
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: '#FF9933',
+    paddingVertical: 15,
+    borderRadius: 20,
     alignItems: 'center',
     marginTop: 20,
     marginBottom: 40,
+    width: '100%',
   },
   createButtonText: {
     color: '#fff',

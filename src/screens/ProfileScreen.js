@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  ScrollView, // Добавляем ScrollView
+  Platform, // Для textAlignVertical
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutUser } from '../store/slices/authSlice';
@@ -117,7 +119,7 @@ const ProfileScreen = ({ navigation }) => {
     }
 
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images, // Keeping deprecated option as requested
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
@@ -157,7 +159,7 @@ const ProfileScreen = ({ navigation }) => {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.scrollViewContent} style={styles.container}>
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color="#333" />
       </TouchableOpacity>
@@ -192,6 +194,7 @@ const ProfileScreen = ({ navigation }) => {
                   value={editableProfile.username}
                   onChangeText={(text) => setEditableProfile({ ...editableProfile, username: text })}
                   placeholderTextColor="#aaa"
+                  // scrollEnabled={false} удалено, так как это однострочное поле
                 />
               </View>
 
@@ -204,18 +207,20 @@ const ProfileScreen = ({ navigation }) => {
                   onChangeText={(text) => setEditableProfile({ ...editableProfile, age: text.replace(/[^0-9]/g, '') })}
                   keyboardType="numeric"
                   placeholderTextColor="#aaa"
+                  // scrollEnabled={false} удалено, так как это однострочное поле
                 />
               </View>
 
               <View style={styles.inputUnderlineContainer}>
                 <Ionicons name="sparkles-outline" size={20} color="#999" style={styles.icon} />
                 <TextInput
-                  style={styles.inputUnderline}
+                  style={[styles.inputUnderline, styles.interestsInput]} // Применяем отдельный стиль для Interests
                   placeholder="Interests"
                   value={editableProfile.interests}
                   onChangeText={(text) => setEditableProfile({ ...editableProfile, interests: text })}
                   multiline
-                  placeholderTextColor="#aaa"
+                  scrollEnabled={false} // Отключаем внутренний скролл для многострочного поля
+                  textAlignVertical='top' // Для корректного выравнивания на Android
                 />
               </View>
 
@@ -246,7 +251,7 @@ const ProfileScreen = ({ navigation }) => {
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>LOGOUT</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 };
 
@@ -254,9 +259,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFF8F0',
+  },
+  scrollViewContent: {
     paddingHorizontal: 30,
     paddingTop: 60,
     alignItems: 'center',
+    paddingBottom: 40, // Добавьте отступ снизу, если содержимое может выходить за экран
   },
   backButton: {
     position: 'absolute',
@@ -321,9 +329,14 @@ const styles = StyleSheet.create({
   },
   inputUnderline: {
     flex: 1,
-    height: 40,
     fontSize: 16,
     color: '#333',
+    minHeight: 40, // Гарантируем минимальную высоту
+    paddingVertical: 0, // Убираем внутренний вертикальный паддинг
+  },
+  interestsInput: { // Новый стиль для поля "Interests"
+    minHeight: 100, // Увеличиваем высоту для многострочного поля
+    textAlignVertical: 'top', // Выравнивание текста сверху
   },
   saveButton: {
     backgroundColor: '#F0E6FF',
@@ -370,7 +383,8 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 20,
     alignItems: 'center',
-    marginTop: 30,
+    marginTop: 30, // Увеличил отступ, чтобы кнопка logout не прилипала к другим элементам
+    marginBottom: 40, // Добавил отступ снизу для ScrollView
     width: '100%',
   },
   logoutButtonText: {
