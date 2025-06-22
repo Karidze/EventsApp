@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,55 +12,62 @@ import {
   Platform,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
-// Теперь импортируем updateBookmarkedEvent вместо removeBookmarkLocally
-import { fetchBookmarkedEvents, updateBookmarkedEvent } from '../store/slices/eventsSlice';
+import {
+  fetchBookmarkedEvents,
+  updateBookmarkedEvent,
+  fetchUserCreatedEvents,
+} from '../store/slices/eventsSlice';
 import EventCard from '../components/EventCard';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
-import { supabase } from '../config/supabase'; // Импортируем supabase для удаления из БД
+import { supabase } from '../config/supabase';
 
 const BookmarksScreen = () => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
-  const isFocused = useIsFocused(); // Хук для определения, находится ли экран в фокусе
+  const isFocused = useIsFocused();
 
-  const { bookmarkedEvents, isBookmarksLoading, bookmarksError } = useSelector((state) => state.events);
+  const {
+    bookmarkedEvents,
+    isBookmarksLoading,
+    bookmarksError,
+    userCreatedEvents,
+    isUserCreatedEventsLoading,
+    userCreatedEventsError,
+  } = useSelector((state) => state.events);
   const { session } = useSelector((state) => state.auth);
 
   const userId = session?.user?.id;
 
-  // Функция для загрузки закладок
-  const loadBookmarks = () => {
+  const loadAllEvents = useCallback(() => {
     if (userId) {
       dispatch(fetchBookmarkedEvents(userId));
+      dispatch(fetchUserCreatedEvents(userId));
     }
-  };
+  }, [dispatch, userId]);
 
-  // Загружаем закладки при фокусе на экране или при изменении user ID
-  // Это также поможет обновить список, если пользователь удалил закладку на EventDetailScreen
   useEffect(() => {
     if (isFocused && userId) {
-      loadBookmarks();
+      loadAllEvents();
     }
-  }, [isFocused, userId, dispatch]);
+  }, [isFocused, userId, loadAllEvents]);
 
-  // Обработка ошибок загрузки
   useEffect(() => {
     if (bookmarksError) {
       Alert.alert('Error Loading Bookmarks', bookmarksError);
     }
-  }, [bookmarksError]);
+    if (userCreatedEventsError) {
+      Alert.alert('Error Loading Your Events', userCreatedEventsError);
+    }
+  }, [bookmarksError, userCreatedEventsError]);
 
-  // Обработчик нажатия на событие в списке для перехода к деталям
   const handleEventPress = (event) => {
     navigation.navigate('EventDetail', { eventId: event.id });
   };
 
-  // Обработчик для кнопки комментариев
   const handleCommentsPress = (event) => {
     navigation.navigate('Comments', { eventId: event.id, eventTitle: event.title });
   };
 
-  // --- Функция для удаления события из избранного ---
   const handleRemoveBookmark = async (event) => {
     if (!userId) {
       Alert.alert('Login Required', 'You must be logged in to remove events from your favorites.');
@@ -80,7 +87,6 @@ const BookmarksScreen = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              // 1. Удаляем запись из таблицы user_bookmarks в Supabase
               const { error } = await supabase
                 .from('user_bookmarks')
                 .delete()
@@ -91,8 +97,6 @@ const BookmarksScreen = () => {
                 throw error;
               }
 
-              // 2. Диспатчим универсальный редьюсер для обновления состояния в Redux
-              // Он удалит событие из bookmarkedEvents и обновит is_bookmarked в selectedEvent
               dispatch(updateBookmarkedEvent({ eventId: event.id, isBookmarked: false }));
               Alert.alert('Removed!', `"${event.title}" has been removed from your favorites.`);
             } catch (err) {
@@ -105,44 +109,68 @@ const BookmarksScreen = () => {
     );
   };
 
-  // Рендеринг каждой карточки события
-  const renderEventCard = ({ item }) => (
+  const renderEventCard = ({ item, isUserCreated = false }) => (
     <EventCard
       event={item}
       onPress={handleEventPress}
-      // Передаем handleRemoveBookmark для кнопки удаления
-      onBookmarkToggle={() => handleRemoveBookmark(item)}
-      isBookmarked={true} // Всегда true, так как это экран избранных
+      onBookmarkToggle={isUserCreated ? undefined : () => handleRemoveBookmark(item)}
+      isBookmarked={!isUserCreated}
       onCommentsPress={handleCommentsPress}
-      // Этот пропс сигнализирует EventCard, что он на экране закладок
       isBookmarksScreen={true}
+      showBookmarkButton={!isUserCreated} // Hide bookmark button for user-created events
     />
   );
 
-  // Состояние загрузки, ошибки и пустой список
+  const combinedData = [];
+  if (bookmarkedEvents.length > 0) {
+    combinedData.push({ type: 'header', title: 'My Bookmarks' });
+    combinedData.push(...bookmarkedEvents.map(event => ({ ...event, itemType: 'bookmarked' })));
+  }
+
+  if (userCreatedEvents.length > 0) {
+    if (combinedData.length > 0) {
+      combinedData.push({ type: 'spacer' });
+    }
+    combinedData.push({ type: 'header', title: 'My Created Events' });
+    combinedData.push(...userCreatedEvents.map(event => ({ ...event, itemType: 'created' })));
+  }
+
+  const renderItem = ({ item }) => {
+    if (item.type === 'header') {
+      return <Text style={styles.sectionHeader}>{item.title}</Text>;
+    }
+    if (item.type === 'spacer') {
+      return <View style={styles.spacer} />;
+    }
+    return renderEventCard({ item, isUserCreated: item.itemType === 'created' });
+  };
+
   if (!userId) {
     return (
       <View style={styles.container}>
         <Text style={styles.title}>Login Required</Text>
-        <Text style={styles.subtitle}>Please log in to view your bookmarked events.</Text>
+        <Text style={styles.subtitle}>Please log in to view your bookmarked and created events.</Text>
       </View>
     );
   }
 
-  if (isBookmarksLoading) {
+  const isLoadingAnything = isBookmarksLoading || isUserCreatedEventsLoading;
+  const noContent = bookmarkedEvents.length === 0 && userCreatedEvents.length === 0;
+
+  if (isLoadingAnything && noContent) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#FF9933" />
-        <Text style={styles.loadingText}>Loading your favorites...</Text>
+        <Text style={styles.loadingText}>Loading your events...</Text>
       </View>
     );
   }
 
-  if (bookmarkedEvents.length === 0 && !bookmarksError) {
+  if (noContent && !isLoadingAnything && !bookmarksError && !userCreatedEventsError) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>No Bookmarked Events</Text>
-        <Text style={styles.subtitle}>You haven't added any events to your favorites yet.</Text>
+        <Text style={styles.title}>No Events Found</Text>
+        <Text style={styles.subtitle}>You haven't added any events to your favorites or created any events yet.</Text>
       </View>
     );
   }
@@ -151,17 +179,17 @@ const BookmarksScreen = () => {
     <SafeAreaView style={styles.safeAreaContainer}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF8F0" />
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Bookmarks</Text>
+        <Text style={styles.headerTitle}>My Events</Text>
       </View>
       <FlatList
-        data={bookmarkedEvents}
-        renderItem={renderEventCard}
-        keyExtractor={(item) => item.id}
+        data={combinedData}
+        renderItem={renderItem}
+        keyExtractor={(item, index) => item.id ? item.id.toString() + item.itemType : item.type + index}
         contentContainerStyle={styles.listContentContainer}
         refreshControl={
           <RefreshControl
-            refreshing={isBookmarksLoading}
-            onRefresh={loadBookmarks}
+            refreshing={isLoadingAnything}
+            onRefresh={loadAllEvents}
             tintColor="#FF9933"
           />
         }
@@ -222,6 +250,18 @@ const styles = StyleSheet.create({
   },
   listContentContainer: {
     paddingBottom: 20,
+  },
+  sectionHeader: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    paddingHorizontal: 20,
+    paddingTop: 15,
+    paddingBottom: 10,
+    backgroundColor: '#FFF8F0',
+  },
+  spacer: {
+    height: 30, 
   },
 });
 

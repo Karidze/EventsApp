@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -39,19 +38,6 @@ const CreateEventScreen = ({ navigation }) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
-  // --- ДОБАВЛЕННЫЕ ЛОГИ ДЛЯ ОТЛАДКИ ---
-  useEffect(() => {
-    console.log('CreateEventScreen mounted. Current Redux State:');
-    console.log('  session:', session);
-    console.log('  user:', user);
-    console.log('  isAuthenticated:', isAuthenticated);
-    if (session?.user?.id) {
-      console.log('  session.user.id (organizer_id candidate):', session.user.id);
-    } else {
-      console.log('  Session or session.user.id is NULL/UNDEFINED.');
-    }
-  }, [session, user, isAuthenticated]); 
-
   useEffect(() => {
     dispatch(fetchAllCategories());
   }, [dispatch]);
@@ -87,63 +73,62 @@ const CreateEventScreen = ({ navigation }) => {
   };
 
   const handleCreateEvent = async () => {
-  if (!session?.user?.id) {
-    Alert.alert('Error', 'You must be logged in to create an event.');
-    console.log('DEBUG: handleCreateEvent aborted. session?.user?.id is missing.');
-    return;
-  }
-
-  if (!title || !description || !location || !city || selectedCategoryIds.length === 0) {
-    Alert.alert('Validation Error', 'Please fill in all required fields and select at least one category.');
-    return;
-  }
-
-  setLoading(true);
-  try {
-    const { data, error } = await supabase
-      .from('events')
-      .insert([
-        {
-          organizer_id: session.user.id,
-          title: title,
-          description: description,
-          date: date.toISOString().split('T')[0],
-          time: time.toTimeString().split(' ')[0],
-          location: location,
-          city: city,
-          event_price: parseFloat(eventPrice) || 0,
-          image_url: imageUrl || null,
-          category_ids: selectedCategoryIds,
-        },
-      ])
-      .select();
-
-    if (error) {
-      console.error('Supabase insert error (from catch):', error.message);
-      throw error;
+    if (!session?.user?.id) {
+      Alert.alert('Error', 'You must be logged in to create an event.');
+      return;
     }
 
-    Alert.alert('Success', 'Event created successfully!');
-    // Очищаем форму
-    setTitle('');
-    setDescription('');
-    setDate(new Date());
-    setTime(new Date());
-    setLocation('');
-    setCity('');
-    setEventPrice('');
-    setImageUrl('');
-    setSelectedCategoryIds([]);
+    if (!title || !description || !location || !city || selectedCategoryIds.length === 0) {
+      Alert.alert('Validation Error', 'Please fill in all required fields and select at least one category.');
+      return;
+    }
 
-    navigation.navigate('SearchEvents'); 
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .insert([
+          {
+            organizer_id: session.user.id,
+            title: title,
+            description: description,
+            date: date.toISOString().split('T')[0],
+            time: time.toTimeString().split(' ')[0],
+            location: location,
+            city: city,
+            event_price: parseFloat(eventPrice) || 0,
+            image_url: imageUrl || null,
+            category_ids: selectedCategoryIds,
+          },
+        ])
+        .select();
 
-  } catch (error) {
-    console.error('Error creating event (catch block):', error.message);
-    Alert.alert('Error creating event', error.message);
-  } finally {
-    setLoading(false);
-  }
-};
+      if (error) {
+        console.error('Supabase insert error:', error.message);
+        throw error;
+      }
+
+      Alert.alert('Success', 'Event created successfully!');
+      // Clear the form
+      setTitle('');
+      setDescription('');
+      setDate(new Date());
+      setTime(new Date());
+      setLocation('');
+      setCity('');
+      setEventPrice('');
+      setImageUrl('');
+      setSelectedCategoryIds([]);
+
+      navigation.navigate('HomeTab', { screen: 'Home' });
+
+    } catch (error) {
+      console.error('Error creating event:', error.message);
+      Alert.alert('Error creating event', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <ScrollView style={styles.container}>
