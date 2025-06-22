@@ -26,10 +26,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 
 const { width } = Dimensions.get('window');
 
-// Константы для ползунка
-// SLIDER_FULL_WIDTH - это вся доступная длина трека, по которой движутся центры ручек
 const SLIDER_FULL_WIDTH = width * 0.8 - 40;
-const THUMB_SIZE = 30; // Размер ручки (диаметр)
+const THUMB_SIZE = 30;
 
 const HomeScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -49,17 +47,12 @@ const HomeScreen = ({ navigation }) => {
   const [showMinTimePicker, setShowMinTimePicker] = useState(false);
   const [showMaxTimePicker, setShowMaxTimePicker] = useState(false);
 
-  // Состояния для цен
   const [minPrice, setMinPrice] = useState(0);
   const [maxPrice, setMaxPrice] = useState(1000);
 
-  // Animated.Value для положения ручек
-  // Изначально minThumbX в начале, maxThumbX в конце
   const minThumbX = useRef(new Animated.Value(0)).current;
   const maxThumbX = useRef(new Animated.Value(SLIDER_FULL_WIDTH)).current;
 
-  // Переменные для отслеживания текущего положения при перетаскивании
-  // Используем useRef, чтобы значения были актуальными внутри PanResponder
   const _minPrice = useRef(minPrice);
   const _maxPrice = useRef(maxPrice);
   useEffect(() => {
@@ -69,30 +62,25 @@ const HomeScreen = ({ navigation }) => {
     _maxPrice.current = maxPrice;
   }, [maxPrice]);
 
-
-  // PanResponder для МИНИМАЛЬНОЙ ручки
   const minThumbPanResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (evt, gestureState) => {
+      onPanResponderGrant: () => {
         minThumbX.setOffset(minThumbX._value);
         minThumbX.setValue(0);
       },
       onPanResponderMove: (evt, gestureState) => {
         let newX = gestureState.dx;
-
-        const currentMaxThumbPos = maxThumbX._value; // Текущая позиция правой ручки
-        const maxAllowedX = currentMaxThumbPos - THUMB_SIZE; // Левая ручка не должна заходить за правую
-
-        newX = Math.max(0, Math.min(newX, maxAllowedX)); // Ограничиваем newX в пределах [0, maxAllowedX]
-
+        const currentMaxThumbPos = maxThumbX._value;
+        const maxAllowedX = currentMaxThumbPos - THUMB_SIZE;
+        newX = Math.max(0, Math.min(newX, maxAllowedX));
         minThumbX.setValue(newX);
 
         const calculatedPrice = Math.round((minThumbX._offset + minThumbX._value) / SLIDER_FULL_WIDTH * 1000);
         setMinPrice(Math.max(0, Math.min(calculatedPrice, _maxPrice.current)));
       },
-      onPanResponderRelease: (evt, gestureState) => {
+      onPanResponderRelease: () => {
         minThumbX.flattenOffset();
         const finalPrice = Math.round((minThumbX._value / SLIDER_FULL_WIDTH) * 1000);
         setMinPrice(Math.max(0, Math.min(finalPrice, _maxPrice.current)));
@@ -100,32 +88,27 @@ const HomeScreen = ({ navigation }) => {
     })
   ).current;
 
-  // PanResponder для МАКСИМАЛЬНОЙ ручки
   const maxThumbPanResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (evt, gestureState) => {
+      onPanResponderGrant: () => {
         maxThumbX.setOffset(maxThumbX._value);
         maxThumbX.setValue(0);
       },
       onPanResponderMove: (evt, gestureState) => {
         let newX = gestureState.dx;
-
-        const currentMinThumbPos = minThumbX._value; // Текущая позиция левой ручки
-        const minAllowedX = currentMinThumbPos + THUMB_SIZE; // Правая ручка не должна заходить за левую
-
-        // !!! ИСПРАВЛЕНИЕ: Ограничиваем абсолютную позицию, а затем вычитаем смещение для относительного newX
-        const absoluteNewX = maxThumbX._offset + newX; // Абсолютная позиция, которую мы хотим получить
+        const currentMinThumbPos = minThumbX._value;
+        const minAllowedX = currentMinThumbPos + THUMB_SIZE;
+        const absoluteNewX = maxThumbX._offset + newX;
         const constrainedAbsoluteX = Math.max(minAllowedX, Math.min(absoluteNewX, SLIDER_FULL_WIDTH));
-        newX = constrainedAbsoluteX - maxThumbX._offset; // Переводим обратно в относительное dx для setValue
-
+        newX = constrainedAbsoluteX - maxThumbX._offset;
         maxThumbX.setValue(newX);
 
         const calculatedPrice = Math.round((maxThumbX._offset + maxThumbX._value) / SLIDER_FULL_WIDTH * 1000);
         setMaxPrice(Math.min(1000, Math.max(calculatedPrice, _minPrice.current)));
       },
-      onPanResponderRelease: (evt, gestureState) => {
+      onPanResponderRelease: () => {
         maxThumbX.flattenOffset();
         const finalPrice = Math.round((maxThumbX._value / SLIDER_FULL_WIDTH) * 1000);
         setMaxPrice(Math.min(1000, Math.max(finalPrice, _minPrice.current)));
@@ -133,16 +116,13 @@ const HomeScreen = ({ navigation }) => {
     })
   ).current;
 
-
-  // Обновляем позиции ручек при изменении minPrice/maxPrice через TextInput
   useEffect(() => {
     minThumbX.setValue((minPrice / 1000) * SLIDER_FULL_WIDTH);
-  }, [minPrice, SLIDER_FULL_WIDTH]);
+  }, [minPrice, SLIDER_FULL_WIDTH, minThumbX]);
 
   useEffect(() => {
     maxThumbX.setValue((maxPrice / 1000) * SLIDER_FULL_WIDTH);
-  }, [maxPrice, SLIDER_FULL_WIDTH]);
-
+  }, [maxPrice, SLIDER_FULL_WIDTH, maxThumbX]);
 
   useEffect(() => {
     dispatch(fetchAllCategories());
@@ -263,7 +243,6 @@ const HomeScreen = ({ navigation }) => {
     setMaxTime(null);
     setMinPrice(0);
     setMaxPrice(1000);
-    // Сбрасываем Animated.Value для рендера
     minThumbX.setValue(0);
     maxThumbX.setValue(SLIDER_FULL_WIDTH);
   };
@@ -272,7 +251,12 @@ const HomeScreen = ({ navigation }) => {
 
   const renderEventCard = useCallback(
     ({ item }) => (
-      <EventCard event={item} onPress={handleEventPress} onBookmarkToggle={handleBookmarkToggle} onCommentsPress={handleCommentsPress} />
+      <EventCard
+        event={item}
+        onPress={handleEventPress}
+        onBookmarkToggle={handleBookmarkToggle}
+        onCommentsPress={handleCommentsPress}
+      />
     ),
     [handleEventPress, handleBookmarkToggle, handleCommentsPress]
   );
@@ -329,7 +313,7 @@ const HomeScreen = ({ navigation }) => {
       <Modal animationType="none" transparent={true} visible={isFilterModalVisible} onRequestClose={closeFilterModal}>
         <View style={styles.filterModalOverlay}>
           <TouchableOpacity
-            style={{ flex: 1, height: '100%' }}
+            style={styles.modalOverlayBackground}
             onPress={closeFilterModal}
             activeOpacity={1}
           />
@@ -340,37 +324,35 @@ const HomeScreen = ({ navigation }) => {
             <ScrollView style={styles.modalScrollView} contentContainerStyle={styles.modalScrollContent}>
               <View style={styles.modalHeaderRow}>
                 <TouchableOpacity style={styles.modalBackButton} onPress={closeFilterModal}>
-                  <Text>
-                    <Ionicons name="arrow-back" size={28} color="#555" />
-                  </Text>
+                  <Ionicons name="arrow-back" size={28} color="#555" />
                 </TouchableOpacity>
                 <Text style={styles.filterModalTitle}>Detailed Filters</Text>
               </View>
 
               <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={styles.modalCategoriesScrollView}
-                  contentContainerStyle={styles.modalCategoriesContent}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.modalCategoriesScrollView}
+                contentContainerStyle={styles.modalCategoriesContent}
               >
-                  <TouchableOpacity
-                      style={[styles.modalCategoryButton, isAllActive && styles.modalActiveCategoryButton]}
-                      onPress={() => handleCategoryToggle('All')}
-                  >
-                      <Text style={[styles.modalCategoryButtonText, isAllActive && styles.modalActiveCategoryButtonText]}>All</Text>
-                  </TouchableOpacity>
-                  {topLevelCategories.map((category) => {
-                      const isActive = selectedCategoryIds.includes(category.id);
-                      return (
-                          <TouchableOpacity
-                              key={category.id}
-                              style={[styles.modalCategoryButton, isActive && styles.modalActiveCategoryButton]}
-                              onPress={() => handleCategoryToggle(category.id)}
-                          >
-                              <Text style={[styles.modalCategoryButtonText, isActive && styles.modalActiveCategoryButtonText]}>{category.name}</Text>
-                          </TouchableOpacity>
-                      );
-                  })}
+                <TouchableOpacity
+                  style={[styles.modalCategoryButton, isAllActive && styles.modalActiveCategoryButton]}
+                  onPress={() => handleCategoryToggle('All')}
+                >
+                  <Text style={[styles.modalCategoryButtonText, isAllActive && styles.modalActiveCategoryButtonText]}>All</Text>
+                </TouchableOpacity>
+                {topLevelCategories.map((category) => {
+                  const isActive = selectedCategoryIds.includes(category.id);
+                  return (
+                    <TouchableOpacity
+                      key={category.id}
+                      style={[styles.modalCategoryButton, isActive && styles.modalActiveCategoryButton]}
+                      onPress={() => handleCategoryToggle(category.id)}
+                    >
+                      <Text style={[styles.modalCategoryButtonText, isActive && styles.modalActiveCategoryButtonText]}>{category.name}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </ScrollView>
 
               <View style={styles.filterSection}>
@@ -451,36 +433,28 @@ const HomeScreen = ({ navigation }) => {
                   {`$${minPrice.toFixed(0)} - $${maxPrice.toFixed(0)}`}
                 </Text>
 
-                {/* --- Кастомный ползунок диапазона на PanResponder --- */}
                 <View style={styles.customSliderContainer}>
-                  {/* Базовая линия трека */}
                   <View style={styles.trackBase} />
-
-                  {/* Заполненная часть трека */}
                   <Animated.View
                     style={[
                       styles.filledTrack,
                       {
-                        // Начало заполненной части - позиция левой ручки
                         left: minThumbX.interpolate({
                           inputRange: [0, SLIDER_FULL_WIDTH],
                           outputRange: [0, SLIDER_FULL_WIDTH],
                           extrapolate: 'clamp',
                         }),
-                        // Ширина заполненной части - разница между правой и левой ручкой
                         width: Animated.add(
                           maxThumbX,
-                          Animated.multiply(minThumbX, -1) // maxThumbX - minThumbX
+                          Animated.multiply(minThumbX, -1)
                         ).interpolate({
-                          inputRange: [0, SLIDER_FULL_WIDTH], // min range can be 0, max is full width
+                          inputRange: [0, SLIDER_FULL_WIDTH],
                           outputRange: [0, SLIDER_FULL_WIDTH],
                           extrapolate: 'clamp',
                         }),
                       },
                     ]}
                   />
-
-                  {/* Ручка минимальной цены */}
                   <Animated.View
                     style={[
                       styles.thumb,
@@ -490,8 +464,6 @@ const HomeScreen = ({ navigation }) => {
                     ]}
                     {...minThumbPanResponder.panHandlers}
                   />
-
-                  {/* Ручка максимальной цены */}
                   <Animated.View
                     style={[
                       styles.thumb,
@@ -502,7 +474,6 @@ const HomeScreen = ({ navigation }) => {
                     {...maxThumbPanResponder.panHandlers}
                   />
                 </View>
-                {/* --- Конец кастомного ползунка диапазона --- */}
 
                 <View style={styles.priceInputsContainer}>
                   <TextInput
@@ -514,10 +485,8 @@ const HomeScreen = ({ navigation }) => {
                       const cleanedText = text.replace(/[^0-9]/g, '');
                       const num = Number(cleanedText);
                       let newMinPrice = isNaN(num) ? 0 : num;
-
                       newMinPrice = Math.max(0, Math.min(newMinPrice, 1000));
-                      newMinPrice = Math.min(newMinPrice, maxPrice); // Не даем minPrice быть больше maxPrice
-
+                      newMinPrice = Math.min(newMinPrice, maxPrice);
                       setMinPrice(newMinPrice);
                     }}
                     onBlur={() => {
@@ -536,10 +505,8 @@ const HomeScreen = ({ navigation }) => {
                       const cleanedText = text.replace(/[^0-9]/g, '');
                       const num = Number(cleanedText);
                       let newMaxPrice = isNaN(num) ? 1000 : num;
-
                       newMaxPrice = Math.max(0, Math.min(newMaxPrice, 1000));
-                      newMaxPrice = Math.max(newMaxPrice, minPrice); // Не даем maxPrice быть меньше minPrice
-
+                      newMaxPrice = Math.max(newMaxPrice, minPrice);
                       setMaxPrice(newMaxPrice);
                     }}
                     onBlur={() => {
@@ -684,6 +651,10 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     flexDirection: 'row-reverse',
   },
+  modalOverlayBackground: {
+    flex: 1,
+    height: '100%',
+  },
   filterModalContent: {
     backgroundColor: '#fff',
     borderRadius: 0,
@@ -820,36 +791,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#555',
   },
-  clearFiltersButton: {
-    backgroundColor: '#e0e0e0',
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  clearFiltersButtonText: {
-    color: '#333',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  closeModalButton: {
-    backgroundColor: '#FF9933',
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  closeModalButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  // --- Стили для кастомного ползунка с PanResponder ---
   customSliderContainer: {
-    height: THUMB_SIZE, // Высота контейнера равна высоте ручки
+    height: THUMB_SIZE,
     justifyContent: 'center',
     alignSelf: 'stretch',
     position: 'relative',
-    marginHorizontal: THUMB_SIZE / 2, // Отступ для корректного отображения ручек по краям
+    marginHorizontal: THUMB_SIZE / 2,
   },
   trackBase: {
     position: 'absolute',
@@ -878,8 +825,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    zIndex: 10, // Чтобы ручки были поверх всего
-    left: -THUMB_SIZE / 2, // Сдвиг, чтобы центр ручки был на нужной координате X
+    zIndex: 10,
+    left: -THUMB_SIZE / 2,
   },
   modalCategoriesScrollView: {
     marginHorizontal: -5,

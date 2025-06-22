@@ -17,7 +17,7 @@ import { supabase } from '../config/supabase';
 import { fetchAllCategories } from '../store/slices/eventsSlice';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-const MAX_CATEGORIES = 5; // Константа определена корректно
+const MAX_CATEGORIES = 5;
 
 const CreateEventScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -26,7 +26,7 @@ const CreateEventScreen = ({ navigation }) => {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [startDate, setStartDate] = useState(new Date());
+  const [startDate, setStartDate] = useState(new Date()); // Оставляем startDate
   const [endDate, setEndDate] = useState(null);
   const [time, setTime] = useState(new Date());
   const [location, setLocation] = useState('');
@@ -56,7 +56,7 @@ const CreateEventScreen = ({ navigation }) => {
   const onChangeEndDate = (event, selectedDate) => {
     const currentDate = selectedDate || endDate;
     setShowEndDatePicker(Platform.OS === 'ios');
-    if (currentDate < startDate) {
+    if (currentDate < startDate) { // Валидация относительно startDate
       Alert.alert('Invalid Date', 'End date cannot be earlier than start date.');
       setEndDate(startDate);
     } else {
@@ -100,7 +100,7 @@ const CreateEventScreen = ({ navigation }) => {
       return;
     }
 
-    if (endDate && endDate < startDate) {
+    if (endDate && endDate < startDate) { // Валидация относительно startDate
       Alert.alert('Validation Error', 'End date cannot be earlier than start date.');
       return;
     }
@@ -114,7 +114,9 @@ const CreateEventScreen = ({ navigation }) => {
             organizer_id: session.user.id,
             title: title,
             description: description,
-            start_date: startDate.toISOString().split('T')[0],
+            // ИЗМЕНЕНО: Отправляем startDate в колонку 'date'
+            date: startDate.toISOString().split('T')[0],
+            // 'end_date' отправляется как есть
             end_date: endDate ? endDate.toISOString().split('T')[0] : null,
             time: time.toTimeString().split(' ')[0],
             location: location,
@@ -195,6 +197,7 @@ const CreateEventScreen = ({ navigation }) => {
 
       <Text style={styles.sectionHeader}>Event Dates:</Text>
       <View style={styles.dateRangeContainer}>
+        {/* Выбор даты начала (использует startDate) */}
         <TouchableOpacity onPress={showStartDatepicker} style={styles.dateTimeButton}>
           <Ionicons name="calendar-outline" size={20} color="#333" />
           <Text style={styles.dateTimeText}>From: {formatDisplayDate(startDate)}</Text>
@@ -210,6 +213,7 @@ const CreateEventScreen = ({ navigation }) => {
           />
         )}
 
+        {/* Выбор даты окончания (использует endDate, но привязана к startDate) */}
         <TouchableOpacity onPress={showEndDatePickerpicker} style={styles.dateTimeButton}>
           <Ionicons name="calendar-outline" size={20} color="#333" />
           <Text style={styles.dateTimeText}>To: {formatDisplayDate(endDate || startDate)}</Text>
@@ -221,7 +225,7 @@ const CreateEventScreen = ({ navigation }) => {
             mode="date"
             display="default"
             onChange={onChangeEndDate}
-            minimumDate={startDate}
+            minimumDate={startDate} // Дата окончания не может быть раньше startDate
           />
         )}
       </View>
@@ -293,7 +297,6 @@ const CreateEventScreen = ({ navigation }) => {
       <View style={styles.categoriesGrid}>
         {Array.isArray(allCategories) && allCategories.map((category) => {
           const isSelected = selectedCategoryIds.includes(category.id);
-          // Исправлено: MAX_CATEGories -> MAX_CATEGORIES
           const isDisabled = !isSelected && selectedCategoryIds.length >= MAX_CATEGORIES;
           return (
             <TouchableOpacity

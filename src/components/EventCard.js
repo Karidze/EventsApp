@@ -1,29 +1,32 @@
-// components/EventCard.js
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons'; 
+import Ionicons from '@expo/vector-icons/Ionicons';
 import moment from 'moment';
-import 'moment/locale/en-gb'; 
+import 'moment/locale/en-gb';
 
-moment.locale('en-gb'); 
+moment.locale('en-gb');
 
-const EventCard = ({ event, onPress, onBookmarkToggle, onCommentsPress }) => { 
+const EventCard = ({ event, onPress, onBookmarkToggle, onCommentsPress }) => {
   const {
     title,
     description,
     date,
+    end_date,
     time,
     location,
     city,
     event_price,
     image_url,
     profiles: organizerProfile,
-    is_bookmarked = false, 
-    comments_count = 0 // <-- ИСПРАВЛЕНО: Было comment_count, теперь comments_count
+    is_bookmarked = false,
+    comments_count = 0
   } = event;
 
-  const formattedDate = moment(date).format('D MMMM YYYY'); // Исправлена ошибка в формате даты
+  const formattedDate = moment(date).format('D MMMM');
   const formattedTime = moment(time, 'HH:mm:ss').format('HH:mm');
+
+  const hasEndDateAndIsDifferent = end_date && moment(date).format('YYYY-MM-DD') !== moment(end_date).format('YYYY-MM-DD');
+  const formattedEndDate = hasEndDateAndIsDifferent ? moment(end_date).format('D MMMM') : null;
 
   const organizerAvatar = organizerProfile?.avatar_url || 'https://via.placeholder.com/50/CCCCCC/FFFFFF?text=ORG';
   const organizerName = organizerProfile?.username || 'Unknown Organizer';
@@ -40,7 +43,9 @@ const EventCard = ({ event, onPress, onBookmarkToggle, onCommentsPress }) => {
         <View style={styles.infoRow}>
           <Ionicons name="calendar-outline" size={16} color="#666" />
           <Text style={styles.infoText}>
-            {formattedDate} <Text style={{fontWeight: 'bold'}}>at</Text> {formattedTime}
+            {formattedDate}
+            {hasEndDateAndIsDifferent ? ` - ${formattedEndDate}` : ''}
+            <Text style={{ fontWeight: 'bold' }}> at</Text> {formattedTime}
           </Text>
         </View>
 
@@ -75,7 +80,6 @@ const EventCard = ({ event, onPress, onBookmarkToggle, onCommentsPress }) => {
         <View style={styles.actionsContainer}>
           <TouchableOpacity style={styles.actionButton} onPress={() => onCommentsPress(event)}>
             <Ionicons name="chatbubble-outline" size={20} color="#007AFF" />
-            {/* ИСПРАВЛЕНО: Отображаем comments_count */}
             <Text style={styles.actionButtonText}>Comments ({comments_count})</Text>
           </TouchableOpacity>
 

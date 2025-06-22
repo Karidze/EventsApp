@@ -58,6 +58,7 @@ export const fetchEvents = createAsyncThunk(
           title,
           description,
           date,
+          end_date,
           time,
           location,
           city,
@@ -67,7 +68,8 @@ export const fetchEvents = createAsyncThunk(
           profiles(
             username,
             avatar_url
-          )
+          ),
+          comments(count)
           `
         );
 
@@ -118,7 +120,14 @@ export const fetchEvents = createAsyncThunk(
       if (error) {
         return rejectWithValue(error.message);
       }
-      return data;
+
+      const eventsWithCommentsCount = data.map(event => ({
+        ...event,
+        comments_count: event.comments ? event.comments[0].count : 0,
+        comments: undefined
+      }));
+
+      return eventsWithCommentsCount;
     } catch (err) {
       return rejectWithValue(err.message);
     }
@@ -137,6 +146,7 @@ export const fetchEventById = createAsyncThunk(
           title,
           description,
           date,
+          end_date,
           time,
           location,
           city,
@@ -146,7 +156,8 @@ export const fetchEventById = createAsyncThunk(
           profiles(
             username,
             avatar_url
-          )
+          ),
+          comments(count) 
           `
         )
         .eq('id', eventId)
@@ -158,7 +169,14 @@ export const fetchEventById = createAsyncThunk(
       if (!data) {
         return rejectWithValue('Event not found.');
       }
-      return data;
+
+      const eventWithCommentCount = {
+        ...data,
+        comments_count: data.comments ? data.comments[0].count : 0,
+        comments: undefined
+      };
+
+      return eventWithCommentCount;
     } catch (err) {
       return rejectWithValue(err.message);
     }
@@ -192,6 +210,7 @@ export const fetchBookmarkedEvents = createAsyncThunk(
           title,
           description,
           date,
+          end_date,
           time,
           location,
           city,
@@ -201,7 +220,8 @@ export const fetchBookmarkedEvents = createAsyncThunk(
           profiles(
             username,
             avatar_url
-          )
+          ),
+          comments(count)
           `
         )
         .in('id', eventIds)
@@ -212,7 +232,15 @@ export const fetchBookmarkedEvents = createAsyncThunk(
         return rejectWithValue(eventsError.message);
       }
 
-      return eventsData.map(event => ({ ...event, is_bookmarked: true, imageUrl: event.image_url }));
+      const bookmarkedEventsWithCount = eventsData.map(event => ({
+        ...event,
+        is_bookmarked: true,
+        imageUrl: event.image_url,
+        comments_count: event.comments ? event.comments[0].count : 0,
+        comments: undefined
+      }));
+
+      return bookmarkedEventsWithCount;
 
     } catch (err) {
       return rejectWithValue(err.message);
@@ -232,6 +260,7 @@ export const fetchUserCreatedEvents = createAsyncThunk(
           title,
           description,
           date,
+          end_date,
           time,
           location,
           city,
@@ -241,17 +270,25 @@ export const fetchUserCreatedEvents = createAsyncThunk(
           profiles(
             username,
             avatar_url
-          )
+          ),
+          comments(count)
           `
         )
-        .eq('organizer_id', userId) // <-- ИСПРАВЛЕНИЕ ЗДЕСЬ: user_id заменен на organizer_id
+        .eq('organizer_id', userId)
         .order('date', { ascending: true })
         .order('time', { ascending: true });
 
       if (error) {
         return rejectWithValue(error.message);
       }
-      return data.map(event => ({ ...event, imageUrl: event.image_url }));
+      const userCreatedEventsWithCount = data.map(event => ({
+        ...event,
+        imageUrl: event.image_url,
+        comments_count: event.comments ? event.comments[0].count : 0,
+        comments: undefined
+      }));
+
+      return userCreatedEventsWithCount;
     } catch (err) {
       return rejectWithValue(err.message);
     }
