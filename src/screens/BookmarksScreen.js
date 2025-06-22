@@ -65,7 +65,7 @@ const BookmarksScreen = () => {
   };
 
   const handleCommentsPress = (event) => {
-    navigation.navigate('Comments', { eventId: event.id, eventTitle: event.title });
+    navigation.navigate('Comments', { eventId: event.id, eventTitle: event.title, fromBookmarks: true });
   };
 
   const handleRemoveBookmark = async (event) => {

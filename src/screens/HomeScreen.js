@@ -19,7 +19,7 @@ import {
   PanResponder,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchEvents, clearEventsError, fetchAllCategories } from '../store/slices/eventsSlice';
+import { fetchEvents, clearEventsError, fetchAllCategories, toggleBookmark } from '../store/slices/eventsSlice';
 import EventCard from '../components/EventCard';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -32,6 +32,9 @@ const THUMB_SIZE = 30;
 const HomeScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const { events, isLoading, error, allCategories } = useSelector((state) => state.events);
+  const { session } = useSelector((state) => state.auth);
+
+  const userId = session?.user?.id;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
@@ -212,15 +215,27 @@ const HomeScreen = ({ navigation }) => {
     navigation.navigate('EventDetail', { eventId: event.id });
   };
 
-  const handleBookmarkToggle = (event) => {
-    Alert.alert('Bookmark', `Toggle bookmark for: ${event.title}`);
-  };
+  const handleBookmarkToggle = useCallback(async (event) => {
+    if (!userId) {
+      Alert.alert('Login Required', 'You must be logged in to save events.');
+      return;
+    }
+
+    try {
+      await dispatch(toggleBookmark({
+        eventId: event.id,
+        userId: userId,
+        isBookmarked: event.is_bookmarked
+      })).unwrap();
+      Alert.alert('Success', `Event "${event.title}" ${event.is_bookmarked ? 'removed from' : 'added to'} your favorites.`);
+    } catch (err) {
+      Alert.alert('Error', `Failed to update bookmark: ${err.message}`);
+      console.error('Bookmark toggle error:', err);
+    }
+  }, [dispatch, userId]);
 
   const handleCommentsPress = (event) => {
-    navigation.navigate('Comments', {
-      eventId: event.id,
-      eventTitle: event.title,
-    });
+    navigation.navigate('Comments', { eventId: event.id, eventTitle: event.title });
   };
 
   const handleCategoryToggle = (categoryId) => {

@@ -25,6 +25,8 @@ function HomeStackNavigator() {
         name="Comments"
         component={CommentsScreen}
         options={{ presentation: 'modal' }}
+        // --- ЗДЕСЬ НЕ ПЕРЕДАЕМ isModalFromRoot: true ---
+        // Так как CommentsScreen будет открываться в контексте HomeStack, который уже внутри TabNavigator
       />
     </HomeStack.Navigator>
   );

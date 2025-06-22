@@ -6,19 +6,20 @@ import {
   FlatList,
   TextInput,
   TouchableOpacity,
-  KeyboardAvoidingView,
   Platform,
   Alert,
   Image,
   Keyboard,
   SafeAreaView,
   StatusBar,
+  KeyboardAvoidingView,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { supabase } from '../config/supabase';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const CommentsScreen = ({ route, navigation }) => {
-  const { eventId, eventTitle } = route.params || {};
+  const { eventId, eventTitle, isModalFromRoot = false } = route.params || {};
 
   const [comments, setComments] = useState([]);
   const [newCommentText, setNewCommentText] = useState('');
@@ -29,20 +30,24 @@ const CommentsScreen = ({ route, navigation }) => {
   const flatListRef = useRef(null);
   const textInputRef = useRef(null);
 
+  const insets = useSafeAreaInsets();
+
   const fetchComments = useCallback(async () => {
     if (!eventId) {
       return;
     }
     const { data, error } = await supabase
       .from('comments')
-      .select(`
+      .select(
+        `
         id,
         content,
         created_at,
         likes_count,
         parent_comment_id,
         profiles!comments_user_id_fkey(username, avatar_url)
-      `)
+        `
+      )
       .eq('event_id', eventId)
       .order('created_at', { ascending: false });
 
@@ -347,45 +352,55 @@ const CommentsScreen = ({ route, navigation }) => {
     );
   };
 
+  const TAB_BAR_HEIGHT_ADJUSTMENT = isModalFromRoot ? 50 : 0;
+  const iosBottomPadding = Platform.OS === 'ios' ? insets.bottom : 0;
+  const androidBottomPadding = Platform.OS === 'android' ? 10 : 0;
+
   return (
-    <KeyboardAvoidingView
-      style={commentsStyles.keyboardAvoidingContainer}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-    >
-      <SafeAreaView style={commentsStyles.safeAreaContainer}>
-        <StatusBar barStyle="dark-content" backgroundColor="#FFF8F0" />
-        <View style={commentsStyles.headerContainer}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={commentsStyles.backButton}>
-            <Ionicons name="arrow-back" size={30} color="#333" />
+    <SafeAreaView style={commentsStyles.safeAreaContainer}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFF8F0" />
+      <View style={commentsStyles.headerContainer}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={commentsStyles.backButton}>
+          <Ionicons name="arrow-back" size={30} color="#333" />
+        </TouchableOpacity>
+        <Text style={commentsStyles.title} numberOfLines={1} ellipsizeMode="tail">
+          Comments for "{eventTitle}"
+        </Text>
+      </View>
+
+      <FlatList
+        ref={flatListRef}
+        data={comments}
+        renderItem={renderCommentItem}
+        keyExtractor={(item) => item.id.toString()}
+        style={commentsStyles.commentsList}
+        contentContainerStyle={[
+          commentsStyles.commentsListContent,
+          { paddingBottom: TAB_BAR_HEIGHT_ADJUSTMENT + 20 }
+        ]}
+        inverted
+        keyboardShouldPersistTaps="handled"
+      />
+
+      {replyTo && (
+        <View style={commentsStyles.replyingToContainer}>
+          <Text style={commentsStyles.replyingToText}>Replying to: @{replyTo.profiles?.username || 'user'}</Text>
+          <TouchableOpacity onPress={() => setReplyTo(null)}>
+            <Ionicons name="close-circle" size={20} color="#888" />
           </TouchableOpacity>
-          <Text style={commentsStyles.title} numberOfLines={1} ellipsizeMode="tail">
-            Comments for "{eventTitle}"
-          </Text>
-          {/* Удаляем кнопку закрытия, так как теперь есть кнопка назад */}
         </View>
+      )}
 
-        <FlatList
-          ref={flatListRef}
-          data={comments}
-          renderItem={renderCommentItem}
-          keyExtractor={(item) => item.id.toString()}
-          style={commentsStyles.commentsList}
-          contentContainerStyle={commentsStyles.commentsListContent}
-          inverted
-          keyboardShouldPersistTaps="handled"
-        />
-
-        {replyTo && (
-          <View style={commentsStyles.replyingToContainer}>
-            <Text style={commentsStyles.replyingToText}>Replying to: @{replyTo.profiles?.username || 'user'}</Text>
-            <TouchableOpacity onPress={() => setReplyTo(null)}>
-              <Ionicons name="close-circle" size={20} color="#888" />
-            </TouchableOpacity>
-          </View>
-        )}
-
-        <View style={commentsStyles.commentInputContainer}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? TAB_BAR_HEIGHT_ADJUSTMENT : -StatusBar.currentHeight + TAB_BAR_HEIGHT_ADJUSTMENT}
+      >
+        <View
+          style={[
+            commentsStyles.commentInputContainer,
+            { paddingBottom: iosBottomPadding + androidBottomPadding + TAB_BAR_HEIGHT_ADJUSTMENT },
+          ]}
+        >
           <TextInput
             ref={textInputRef}
             style={commentsStyles.commentInput}
@@ -401,22 +416,19 @@ const CommentsScreen = ({ route, navigation }) => {
             <Ionicons name="send" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
-      </SafeAreaView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const commentsStyles = StyleSheet.create({
-  keyboardAvoidingContainer: {
-    flex: 1,
-  },
   safeAreaContainer: {
     flex: 1,
     backgroundColor: '#FFF8F0',
   },
   headerContainer: {
     flexDirection: 'row',
-    alignItems: 'center', // Выравниваем элементы по центру по вертикали
+    alignItems: 'center',
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderBottomWidth: 1,
@@ -425,14 +437,14 @@ const commentsStyles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 0,
   },
   backButton: {
-    paddingRight: 10, // Отступ справа от стрелки
+    paddingRight: 10,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    flex: 1, // Позволяет заголовку занимать оставшееся пространство
+    flex: 1,
     color: '#333',
-    marginLeft: 5, // Небольшой отступ от кнопки назад
+    marginLeft: 5,
   },
   commentsList: {
     flex: 1,

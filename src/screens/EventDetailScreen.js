@@ -13,7 +13,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -21,10 +21,8 @@ import {
   clearEventsError,
   fetchAllCategories,
   clearSelectedEvent,
-  updateBookmarkedEvent, // Импортируем универсальный редьюсер
-  fetchBookmarkedEvents // Возможно, потребуется для синхронизации, если пользователь НЕ переключал вкладки
+  updateBookmarkedEvent,
 } from '../store/slices/eventsSlice';
-import moment from 'moment';
 import { supabase } from '../config/supabase';
 
 const EventDetailScreen = ({ route }) => {
@@ -34,9 +32,6 @@ const EventDetailScreen = ({ route }) => {
 
   const { selectedEvent, isLoading, error, allCategories, bookmarkedEvents } = useSelector((state) => state.events);
   const { session } = useSelector((state) => state.auth);
-
-  // Теперь состояние isBookmarked берется напрямую из selectedEvent, который обновляется Redux'ом
-  // const [isBookmarked, setIsBookmarked] = useState(false); // Удаляем локальное состояние
 
   useEffect(() => {
     if (allCategories.length === 0) {
@@ -50,26 +45,16 @@ const EventDetailScreen = ({ route }) => {
     };
   }, [dispatch, eventId, allCategories.length]);
 
-  // Этот useEffect заменяет логику checkIfBookmarked и синхронизирует is_bookmarked
-  // selectedEvent.is_bookmarked уже устанавливается в fetchEventById.fulfilled
-  // и обновляется updateBookmarkedEvent.
-  // Тем не менее, можно добавить этот для дополнительной надежности, если bookmarkedEvents
-  // обновятся не из этого экрана (например, при переходе с BookmarksScreen)
   useEffect(() => {
     if (selectedEvent && bookmarkedEvents) {
       const isBookmarkedInReduxList = bookmarkedEvents.some(
         (bEvent) => bEvent.id === selectedEvent.id
       );
-      // Если текущий статус в selectedEvent отличается от того, что в списке закладок,
-      // обновим selectedEvent через updateBookmarkedEvent.
-      // Это покроет сценарий, когда пользователь удалил закладку на BookmarksScreen
-      // и потом вернулся на EventDetailScreen этого события.
       if (selectedEvent.is_bookmarked !== isBookmarkedInReduxList) {
         dispatch(updateBookmarkedEvent({ eventId: selectedEvent.id, isBookmarked: isBookmarkedInReduxList }));
       }
     }
   }, [selectedEvent, bookmarkedEvents, dispatch]);
-
 
   useEffect(() => {
     if (error) {
@@ -99,12 +84,10 @@ const EventDetailScreen = ({ route }) => {
       return;
     }
 
-    // Берем текущий статус закладки из selectedEvent в Redux
     const currentBookmarkedStatus = selectedEvent.is_bookmarked;
 
     try {
       if (currentBookmarkedStatus) {
-        // Удалить из закладок
         const { error: deleteError } = await supabase
           .from('user_bookmarks')
           .delete()
@@ -116,7 +99,6 @@ const EventDetailScreen = ({ route }) => {
         }
         Alert.alert('Removed from Favorites', `'${selectedEvent.title}' has been removed from your favorites.`);
       } else {
-        // Добавить в закладки
         const { error: insertError } = await supabase
           .from('user_bookmarks')
           .insert([
@@ -128,8 +110,6 @@ const EventDetailScreen = ({ route }) => {
         }
         Alert.alert('Added to Favorites', `'${selectedEvent.title}' has been added to your favorites!`);
       }
-      // Диспатчим универсальный редьюсер, который обновит selectedEvent.is_bookmarked
-      // и массив bookmarkedEvents в Redux
       dispatch(updateBookmarkedEvent({ eventId: selectedEvent.id, isBookmarked: !currentBookmarkedStatus }));
 
     } catch (err) {
@@ -179,10 +159,9 @@ const EventDetailScreen = ({ route }) => {
     location,
     event_price,
     imageUrl,
-    // externalLink, // <--- Убедитесь, что externalLink не деструктурируется, если его нет в данных
     category_ids,
     profiles,
-    is_bookmarked, // <--- Берем из Redux!
+    is_bookmarked,
   } = selectedEvent;
 
   const organizerName = profiles?.username || 'Unknown organizer';
@@ -199,10 +178,9 @@ const EventDetailScreen = ({ route }) => {
     const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
     const formattedDate = d.toLocaleDateString(undefined, dateOptions);
 
-    // Проверяем, есть ли время и корректно ли оно отформатировано
     let formattedTime = eventTime;
-    if (eventTime && eventTime.match(/^\d{2}:\d{2}(:\d{2})?$/)) { // Простая проверка HH:mm или HH:mm:ss
-      formattedTime = eventTime.substring(0, 5); // Обрезаем до HH:mm
+    if (eventTime && eventTime.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
+      formattedTime = eventTime.substring(0, 5);
     } else {
       formattedTime = 'Time not specified';
     }
@@ -222,9 +200,9 @@ const EventDetailScreen = ({ route }) => {
           <Text style={styles.headerTitle}>Event Details</Text>
           <TouchableOpacity onPress={handleBookmarkToggle} style={styles.bookmarkIcon}>
             <Ionicons
-              name={is_bookmarked ? 'bookmark' : 'bookmark-outline'} // Используем is_bookmarked из Redux
+              name={is_bookmarked ? 'bookmark' : 'bookmark-outline'}
               size={28}
-              color={is_bookmarked ? '#FF9933' : '#333'} // Используем is_bookmarked из Redux
+              color={is_bookmarked ? '#FF9933' : '#333'}
             />
           </TouchableOpacity>
         </View>
@@ -277,8 +255,7 @@ const EventDetailScreen = ({ route }) => {
             </TouchableOpacity>
           </View>
 
-          {/* Условно рендерим кнопку внешнего линка, если externalLink существует */}
-          {selectedEvent.externalLink && ( // Используем selectedEvent.externalLink
+          {selectedEvent.externalLink && (
             <TouchableOpacity style={styles.externalLinkButton} onPress={() => handleOpenLink(selectedEvent.externalLink)}>
               <Ionicons name="link-outline" size={20} color="#FF9933" />
               <Text style={styles.externalLinkButtonText}>Learn More / Register</Text>

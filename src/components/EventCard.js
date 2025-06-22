@@ -1,3 +1,4 @@
+// components/EventCard.js
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -17,17 +18,20 @@ const EventCard = ({ event, onPress, onBookmarkToggle, onCommentsPress }) => {
     city,
     event_price,
     image_url,
-    profiles: organizerProfile,
-    is_bookmarked = false,
-    comments_count = 0
+    profiles: organizerProfile, // Organizer information
+    is_bookmarked = false,       // Bookmark status from Redux
+    comments_count = 0,          // Number of comments
+    // category_names is intentionally not destructured here as it's not used for display
   } = event;
 
   const formattedDate = moment(date).format('D MMMM');
   const formattedTime = moment(time, 'HH:mm:ss').format('HH:mm');
 
+  // Determine if there's an end date and if it's different from the start date
   const hasEndDateAndIsDifferent = end_date && moment(date).format('YYYY-MM-DD') !== moment(end_date).format('YYYY-MM-DD');
   const formattedEndDate = hasEndDateAndIsDifferent ? moment(end_date).format('D MMMM') : null;
 
+  // Organizer data
   const organizerAvatar = organizerProfile?.avatar_url || 'https://via.placeholder.com/50/CCCCCC/FFFFFF?text=ORG';
   const organizerName = organizerProfile?.username || 'Unknown Organizer';
 
@@ -40,6 +44,7 @@ const EventCard = ({ event, onPress, onBookmarkToggle, onCommentsPress }) => {
           {description.length > 100 ? description.substring(0, 97) + '...' : description}
         </Text>
 
+        {/* Date and Time */}
         <View style={styles.infoRow}>
           <Ionicons name="calendar-outline" size={16} color="#666" />
           <Text style={styles.infoText}>
@@ -49,6 +54,7 @@ const EventCard = ({ event, onPress, onBookmarkToggle, onCommentsPress }) => {
           </Text>
         </View>
 
+        {/* Location */}
         <View style={styles.infoRow}>
           <Ionicons name="location-outline" size={16} color="#666" />
           <Text style={styles.infoText}>
@@ -56,6 +62,7 @@ const EventCard = ({ event, onPress, onBookmarkToggle, onCommentsPress }) => {
           </Text>
         </View>
 
+        {/* Price */}
         {event_price > 0 ? (
           <View style={styles.infoRow}>
             <Ionicons name="pricetag-outline" size={16} color="#666" />
@@ -70,6 +77,7 @@ const EventCard = ({ event, onPress, onBookmarkToggle, onCommentsPress }) => {
           </View>
         )}
 
+        {/* Organizer Info */}
         <View style={styles.organizerInfo}>
           <Image source={{ uri: organizerAvatar }} style={styles.organizerAvatar} />
           <Text style={styles.organizerName}>
@@ -77,22 +85,26 @@ const EventCard = ({ event, onPress, onBookmarkToggle, onCommentsPress }) => {
           </Text>
         </View>
 
+        {/* Action Buttons */}
         <View style={styles.actionsContainer}>
           <TouchableOpacity style={styles.actionButton} onPress={() => onCommentsPress(event)}>
             <Ionicons name="chatbubble-outline" size={20} color="#007AFF" />
             <Text style={styles.actionButtonText}>Comments ({comments_count})</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionButton} onPress={() => onBookmarkToggle(event)}>
-            <Ionicons
-              name={is_bookmarked ? 'bookmark' : 'bookmark-outline'}
-              size={20}
-              color={is_bookmarked ? '#007AFF' : '#666'}
-            />
-            <Text style={[styles.actionButtonText, is_bookmarked && styles.bookmarkedText]}>
-              {is_bookmarked ? 'Saved' : 'Save Event'}
-            </Text>
-          </TouchableOpacity>
+          {/* "Save Event" / "Saved" Button */}
+          {onBookmarkToggle && ( // Show button only if onBookmarkToggle is provided
+            <TouchableOpacity style={styles.actionButton} onPress={() => onBookmarkToggle(event)}>
+              <Ionicons
+                name={is_bookmarked ? 'bookmark' : 'bookmark-outline'}
+                size={20}
+                color={is_bookmarked ? '#007AFF' : '#666'}
+              />
+              <Text style={[styles.actionButtonText, is_bookmarked && styles.bookmarkedText]}>
+                {is_bookmarked ? 'Saved' : 'Save Event'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
       </View>
