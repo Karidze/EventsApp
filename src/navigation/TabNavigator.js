@@ -4,14 +4,14 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { View, Text, Platform, StatusBar } from 'react-native';
 
-import HomeScreen from '../screens/HomeScreen';
-import MapScreen from '../screens/MapScreen';
-import CreateEventScreen from '../screens/CreateEventScreen';
-import BookmarksScreen from '../screens/BookmarksScreen';
-import ProfileScreen from '../screens/ProfileScreen';
+import HomeScreen from '../screens/HomeScreen/HomeScreen';
+import MapScreen from '../screens/MapScreen/MapScreen';
+import CreateEventScreen from '../screens/CreateEventScreen/CreateEventScreen';
+import BookmarksScreen from '../screens/BookmarksScreen/BookmarksScreen';
+import ProfileScreen from '../screens/ProfileScreen/ProfileScreen';
 
-import EventDetailScreen from '../screens/EventDetailScreen';
-import CommentsScreen from '../screens/CommentsScreen';
+import EventDetailScreen from '../screens/EventDetailScreen/EventDetailScreen';
+import CommentsScreen from '../screens/CommentsScreen/CommentsScreen';
 
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
@@ -25,8 +25,6 @@ function HomeStackNavigator() {
         name="Comments"
         component={CommentsScreen}
         options={{ presentation: 'modal' }}
-        // --- ЗДЕСЬ НЕ ПЕРЕДАЕМ isModalFromRoot: true ---
-        // Так как CommentsScreen будет открываться в контексте HomeStack, который уже внутри TabNavigator
       />
     </HomeStack.Navigator>
   );

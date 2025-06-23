@@ -2,10 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   TextInput,
-  Keyboard,
   TouchableOpacity,
+  Keyboard,
   Alert,
 } from 'react-native';
 import MapView, {
@@ -18,6 +17,8 @@ import { useSelector } from 'react-redux';
 import { getDistance } from 'geolib';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
+
+import styles from './MapScreenStyles';
 
 const MapScreen = ({ navigation }) => {
   const { events } = useSelector(state => state.events);
@@ -175,71 +176,5 @@ const MapScreen = ({ navigation }) => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFF8F0', paddingTop: 60 },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 25,
-    paddingHorizontal: 20,
-  },
-  backButton: { position: 'absolute', left: 20, zIndex: 1, top: 0 },
-  title: { fontSize: 28, fontWeight: '500', textAlign: 'center', color: '#333' },
-  inputContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 30,
-    marginBottom: 15,
-  },
-  inputLabel: { fontSize: 16, color: '#333', marginRight: 10, fontWeight: '500' },
-  input: {
-    borderWidth: 1,
-    borderColor: '#bdc3c7',
-    borderRadius: 10,
-    padding: 12,
-    width: 100,
-    textAlign: 'center',
-    fontSize: 16,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 5,
-    color: '#34495e',
-  },
-  locationButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#4682B4',
-    padding: 12,
-    marginHorizontal: 30,
-    borderRadius: 10,
-    marginBottom: 15,
-  },
-  locationButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    marginLeft: 10,
-    fontSize: 16,
-  },
-  addressContainer: { alignItems: 'center', marginBottom: 15, paddingHorizontal: 30 },
-  addressText: { fontSize: 16, color: '#333', textAlign: 'center' },
-  map: {
-    flex: 1,
-    borderRadius: 15,
-    overflow: 'hidden',
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 10,
-  },
-});
 
 export default MapScreen;

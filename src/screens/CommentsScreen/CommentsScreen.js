@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   FlatList,
   TextInput,
   TouchableOpacity,
@@ -15,8 +14,10 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { supabase } from '../config/supabase';
+import { supabase } from '../../config/supabase';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import styles from './CommentsScreenStyles';
 
 const CommentsScreen = ({ route, navigation }) => {
   const { eventId, eventTitle, isModalFromRoot = false } = route.params || {};
@@ -322,30 +323,30 @@ const CommentsScreen = ({ route, navigation }) => {
     const repliedToComment = comments.find((c) => c.id === item.parent_comment_id);
 
     return (
-      <View style={commentsStyles.commentItem}>
-        <View style={commentsStyles.commentHeader}>
+      <View style={styles.commentItem}>
+        <View style={styles.commentHeader}>
           {userAvatar ? (
-            <Image source={userAvatar} style={commentsStyles.avatar} />
+            <Image source={userAvatar} style={styles.avatar} />
           ) : (
-            <Ionicons name="person-circle-outline" size={30} color="#888" style={commentsStyles.avatarPlaceholder} />
+            <Ionicons name="person-circle-outline" size={30} color="#888" style={styles.avatarPlaceholder} />
           )}
-          <Text style={commentsStyles.commentAuthor}>{item.profiles?.username || 'Unknown User'}</Text>
+          <Text style={styles.commentAuthor}>{item.profiles?.username || 'Unknown User'}</Text>
         </View>
 
         {repliedToComment && (
-          <Text style={commentsStyles.replyingToCommentPrefix}>
+          <Text style={styles.replyingToCommentPrefix}>
             Replying to @{repliedToComment.profiles?.username || 'user'}:
           </Text>
         )}
 
-        <Text style={commentsStyles.commentContent}>{item.content}</Text>
-        <View style={commentsStyles.commentActions}>
-          <TouchableOpacity style={commentsStyles.actionButton} onPress={() => handleReplyToComment(item)}>
-            <Text style={commentsStyles.replyButtonText}>Reply</Text>
+        <Text style={styles.commentContent}>{item.content}</Text>
+        <View style={styles.commentActions}>
+          <TouchableOpacity style={styles.actionButton} onPress={() => handleReplyToComment(item)}>
+            <Text style={styles.replyButtonText}>Reply</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={commentsStyles.actionButton} onPress={() => handleLikeComment(item.id)}>
+          <TouchableOpacity style={styles.actionButton} onPress={() => handleLikeComment(item.id)}>
             <Ionicons name={isLikedByUser ? 'heart' : 'heart-outline'} size={18} color={isLikedByUser ? 'red' : '#888'} />
-            <Text style={commentsStyles.likesCount}>{item.likes_count || 0}</Text>
+            <Text style={styles.likesCount}>{item.likes_count || 0}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -357,13 +358,13 @@ const CommentsScreen = ({ route, navigation }) => {
   const androidBottomPadding = Platform.OS === 'android' ? 10 : 0;
 
   return (
-    <SafeAreaView style={commentsStyles.safeAreaContainer}>
+    <SafeAreaView style={styles.safeAreaContainer}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF8F0" />
-      <View style={commentsStyles.headerContainer}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={commentsStyles.backButton}>
+      <View style={styles.headerContainer}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={30} color="#333" />
         </TouchableOpacity>
-        <Text style={commentsStyles.title} numberOfLines={1} ellipsizeMode="tail">
+        <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
           Comments for "{eventTitle}"
         </Text>
       </View>
@@ -373,9 +374,9 @@ const CommentsScreen = ({ route, navigation }) => {
         data={comments}
         renderItem={renderCommentItem}
         keyExtractor={(item) => item.id.toString()}
-        style={commentsStyles.commentsList}
+        style={styles.commentsList}
         contentContainerStyle={[
-          commentsStyles.commentsListContent,
+          styles.commentsListContent,
           { paddingBottom: TAB_BAR_HEIGHT_ADJUSTMENT + 20 }
         ]}
         inverted
@@ -383,8 +384,8 @@ const CommentsScreen = ({ route, navigation }) => {
       />
 
       {replyTo && (
-        <View style={commentsStyles.replyingToContainer}>
-          <Text style={commentsStyles.replyingToText}>Replying to: @{replyTo.profiles?.username || 'user'}</Text>
+        <View style={styles.replyingToContainer}>
+          <Text style={styles.replyingToText}>Replying to: @{replyTo.profiles?.username || 'user'}</Text>
           <TouchableOpacity onPress={() => setReplyTo(null)}>
             <Ionicons name="close-circle" size={20} color="#888" />
           </TouchableOpacity>
@@ -397,13 +398,13 @@ const CommentsScreen = ({ route, navigation }) => {
       >
         <View
           style={[
-            commentsStyles.commentInputContainer,
+            styles.commentInputContainer,
             { paddingBottom: iosBottomPadding + androidBottomPadding + TAB_BAR_HEIGHT_ADJUSTMENT },
           ]}
         >
           <TextInput
             ref={textInputRef}
-            style={commentsStyles.commentInput}
+            style={styles.commentInput}
             placeholder="Add a comment..."
             placeholderTextColor="#888"
             value={newCommentText}
@@ -412,7 +413,7 @@ const CommentsScreen = ({ route, navigation }) => {
             returnKeyType="send"
             onSubmitEditing={handleAddComment}
           />
-          <TouchableOpacity onPress={handleAddComment} style={commentsStyles.sendButton}>
+          <TouchableOpacity onPress={handleAddComment} style={styles.sendButton}>
             <Ionicons name="send" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -420,148 +421,5 @@ const CommentsScreen = ({ route, navigation }) => {
     </SafeAreaView>
   );
 };
-
-const commentsStyles = StyleSheet.create({
-  safeAreaContainer: {
-    flex: 1,
-    backgroundColor: '#FFF8F0',
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    backgroundColor: '#FFF8F0',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 0,
-  },
-  backButton: {
-    paddingRight: 10,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    flex: 1,
-    color: '#333',
-    marginLeft: 5,
-  },
-  commentsList: {
-    flex: 1,
-  },
-  commentsListContent: {
-    paddingHorizontal: 15,
-    paddingBottom: 20,
-    paddingTop: 10,
-  },
-  commentItem: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  commentHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    marginRight: 10,
-    backgroundColor: '#ddd',
-  },
-  avatarPlaceholder: {
-    marginRight: 10,
-  },
-  commentAuthor: {
-    fontWeight: 'bold',
-    color: '#333',
-    fontSize: 15,
-  },
-  replyingToCommentPrefix: {
-    fontSize: 13,
-    color: '#666',
-    fontStyle: 'italic',
-    marginBottom: 5,
-    marginLeft: 40,
-  },
-  commentContent: {
-    fontSize: 14,
-    color: '#555',
-    marginBottom: 5,
-    marginLeft: 40,
-  },
-  commentActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    marginTop: 5,
-    marginLeft: 40,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 15,
-  },
-  replyButtonText: {
-    color: '#007AFF',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  likesCount: {
-    fontSize: 12,
-    color: '#888',
-    marginLeft: 4,
-  },
-  replyingToContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#e0e0e0',
-    padding: 8,
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
-  },
-  replyingToText: {
-    fontSize: 14,
-    color: '#555',
-    fontStyle: 'italic',
-  },
-  commentInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    backgroundColor: '#f9f9f9',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  commentInput: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    maxHeight: 100,
-    fontSize: 16,
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  sendButton: {
-    backgroundColor: '#007AFF',
-    borderRadius: 20,
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
 
 export default CommentsScreen;

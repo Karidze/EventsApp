@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  StyleSheet,
   Alert,
   ActivityIndicator,
   Platform,
@@ -13,9 +12,12 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { supabase } from '../config/supabase';
-import { fetchAllCategories } from '../store/slices/eventsSlice';
+import { supabase } from '../../config/supabase';
+import { fetchAllCategories } from '../../store/slices/eventsSlice';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import MapView, { Marker } from 'react-native-maps';
+
+import styles from './CreateEventScreenStyles';
 
 const MAX_CATEGORIES = 5;
 
@@ -35,6 +37,9 @@ const CreateEventScreen = ({ navigation }) => {
   const [imageUrl, setImageUrl] = useState('');
   const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  const [latitude, setLatitude] = useState(50.4501);
+  const [longitude, setLongitude] = useState(30.5234);
 
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
@@ -81,10 +86,7 @@ const CreateEventScreen = ({ navigation }) => {
       if (selectedCategoryIds.length < MAX_CATEGORIES) {
         setSelectedCategoryIds([...selectedCategoryIds, categoryId]);
       } else {
-        Alert.alert(
-          'Limit Reached',
-          `You can select a maximum of ${MAX_CATEGORIES} categories.`
-        );
+        Alert.alert('Limit Reached', `You can select a maximum of ${MAX_CATEGORIES} categories.`);
       }
     }
   };
@@ -105,6 +107,11 @@ const CreateEventScreen = ({ navigation }) => {
       return;
     }
 
+    if (latitude === null || longitude === null) {
+      Alert.alert('Validation Error', 'Please select a location on the map.');
+      return;
+    }
+
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -122,6 +129,8 @@ const CreateEventScreen = ({ navigation }) => {
             event_price: parseFloat(eventPrice) || 0,
             image_url: imageUrl || null,
             category_ids: selectedCategoryIds,
+            latitude: latitude,
+            longitude: longitude,
           },
         ])
         .select();
@@ -145,6 +154,8 @@ const CreateEventScreen = ({ navigation }) => {
       setEventPrice('');
       setImageUrl('');
       setSelectedCategoryIds([]);
+      setLatitude(50.4501);
+      setLongitude(30.5234);
 
       navigation.navigate('HomeTab', { screen: 'Home' });
 
@@ -165,6 +176,7 @@ const CreateEventScreen = ({ navigation }) => {
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color="#333" />
       </TouchableOpacity>
+
       <Text style={styles.title}>Create New Event</Text>
 
       <View style={styles.inputUnderlineContainer}>
@@ -189,7 +201,7 @@ const CreateEventScreen = ({ navigation }) => {
           multiline
           numberOfLines={4}
           scrollEnabled={false}
-          textAlignVertical='top'
+          textAlignVertical="top"
         />
       </View>
 
@@ -246,7 +258,7 @@ const CreateEventScreen = ({ navigation }) => {
         <Ionicons name="location-outline" size={20} color="#999" style={styles.icon} />
         <TextInput
           style={styles.inputUnderline}
-          placeholder="Location (e.g., 'Exhibition Center')"
+          placeholder="Location Name (e.g., 'Exhibition Center')"
           placeholderTextColor="#aaa"
           value={location}
           onChangeText={setLocation}
@@ -286,6 +298,33 @@ const CreateEventScreen = ({ navigation }) => {
           onChangeText={setImageUrl}
         />
       </View>
+
+      <Text style={styles.sectionHeader}>Select Event Location on Map:</Text>
+      <MapView
+        style={styles.map}
+        initialRegion={{
+          latitude: latitude,
+          longitude: longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }}
+        onPress={(e) => {
+          setLatitude(e.nativeEvent.coordinate.latitude);
+          setLongitude(e.nativeEvent.coordinate.longitude);
+        }}
+      >
+        <Marker
+          coordinate={{ latitude, longitude }}
+          draggable
+          onDragEnd={(e) => {
+            setLatitude(e.nativeEvent.coordinate.latitude);
+            setLongitude(e.nativeEvent.coordinate.longitude);
+          }}
+        />
+      </MapView>
+      <Text style={styles.selectedCoordinatesText}>
+        Selected: Lat {latitude.toFixed(5)}, Lon {longitude.toFixed(5)}
+      </Text>
 
       <Text style={styles.sectionHeader}>
         Select Categories (Max {MAX_CATEGORIES}):
@@ -330,141 +369,5 @@ const CreateEventScreen = ({ navigation }) => {
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF8F0',
-  },
-  scrollViewContent: {
-    paddingHorizontal: 30,
-    paddingTop: 60,
-    alignItems: 'center',
-    paddingBottom: 40,
-  },
-  backButton: {
-    position: 'absolute',
-    top: 60,
-    left: 20,
-    zIndex: 1,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '500',
-    textAlign: 'center',
-    marginBottom: 30,
-    color: '#333',
-  },
-  inputUnderlineContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderColor: '#ccc',
-    marginBottom: 20,
-    paddingVertical: 6,
-    width: '100%',
-  },
-  icon: {
-    marginRight: 10,
-  },
-  inputUnderline: {
-    flex: 1,
-    fontSize: 16,
-    color: '#333',
-    minHeight: 40,
-    paddingVertical: 0,
-  },
-  descriptionInput: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-  dateTimeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-    width: '100%',
-  },
-  dateRangeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-    width: '100%',
-    flexWrap: 'wrap',
-  },
-  dateTimeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFEBCC',
-    borderRadius: 20,
-    paddingVertical: 15,
-    paddingHorizontal: 15,
-    flex: 1,
-    marginHorizontal: 5,
-    justifyContent: 'center',
-    minWidth: '45%',
-    marginBottom: 10,
-  },
-  dateTimeText: {
-    marginLeft: 10,
-    fontSize: 16,
-    color: '#333',
-    fontWeight: 'bold',
-  },
-  sectionHeader: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#555',
-    marginBottom: 10,
-    marginTop: 15,
-    width: '100%',
-    textAlign: 'left',
-  },
-  categoriesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 20,
-    justifyContent: 'flex-start',
-    width: '100%',
-  },
-  categoryButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 20,
-    backgroundColor: '#FFEBCC',
-    margin: 5,
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
-  selectedCategoryButton: {
-    backgroundColor: '#FF9933',
-    borderColor: '#FF9933',
-  },
-  disabledCategoryButton: {
-    backgroundColor: '#f0f0f0',
-    borderColor: '#e0e0e0',
-  },
-  categoryButtonText: {
-    color: '#333',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  disabledCategoryButtonText: {
-    color: '#aaa',
-  },
-  createButton: {
-    backgroundColor: '#FF9933',
-    paddingVertical: 15,
-    borderRadius: 20,
-    alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 40,
-    width: '100%',
-  },
-  createButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-});
 
 export default CreateEventScreen;

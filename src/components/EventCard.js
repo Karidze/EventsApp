@@ -18,20 +18,17 @@ const EventCard = ({ event, onPress, onBookmarkToggle, onCommentsPress }) => {
     city,
     event_price,
     image_url,
-    profiles: organizerProfile, // Organizer information
-    is_bookmarked = false,       // Bookmark status from Redux
-    comments_count = 0,          // Number of comments
-    // category_names is intentionally not destructured here as it's not used for display
+    profiles: organizerProfile, 
+    is_bookmarked = false,      
+    comments_count = 0,         
   } = event;
 
   const formattedDate = moment(date).format('D MMMM');
   const formattedTime = moment(time, 'HH:mm:ss').format('HH:mm');
 
-  // Determine if there's an end date and if it's different from the start date
   const hasEndDateAndIsDifferent = end_date && moment(date).format('YYYY-MM-DD') !== moment(end_date).format('YYYY-MM-DD');
   const formattedEndDate = hasEndDateAndIsDifferent ? moment(end_date).format('D MMMM') : null;
 
-  // Organizer data
   const organizerAvatar = organizerProfile?.avatar_url || 'https://via.placeholder.com/50/CCCCCC/FFFFFF?text=ORG';
   const organizerName = organizerProfile?.username || 'Unknown Organizer';
 
@@ -93,7 +90,7 @@ const EventCard = ({ event, onPress, onBookmarkToggle, onCommentsPress }) => {
           </TouchableOpacity>
 
           {/* "Save Event" / "Saved" Button */}
-          {onBookmarkToggle && ( // Show button only if onBookmarkToggle is provided
+          {onBookmarkToggle && ( 
             <TouchableOpacity style={styles.actionButton} onPress={() => onBookmarkToggle(event)}>
               <Ionicons
                 name={is_bookmarked ? 'bookmark' : 'bookmark-outline'}

@@ -1,0 +1,146 @@
+import { StyleSheet, Platform, StatusBar } from 'react-native';
+
+const styles = StyleSheet.create({
+  safeAreaContainer: {
+    flex: 1,
+    backgroundColor: '#FFF8F0',
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    backgroundColor: '#FFF8F0',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 0,
+  },
+  backButton: {
+    paddingRight: 10,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    flex: 1,
+    color: '#333',
+    marginLeft: 5,
+  },
+  commentsList: {
+    flex: 1,
+  },
+  commentsListContent: {
+    paddingHorizontal: 15,
+    paddingBottom: 20,
+    paddingTop: 10,
+  },
+  commentItem: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  commentHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  avatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    marginRight: 10,
+    backgroundColor: '#ddd',
+  },
+  avatarPlaceholder: {
+    marginRight: 10,
+  },
+  commentAuthor: {
+    fontWeight: 'bold',
+    color: '#333',
+    fontSize: 15,
+  },
+  replyingToCommentPrefix: {
+    fontSize: 13,
+    color: '#666',
+    fontStyle: 'italic',
+    marginBottom: 5,
+    marginLeft: 40,
+  },
+  commentContent: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 5,
+    marginLeft: 40,
+  },
+  commentActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginTop: 5,
+    marginLeft: 40,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 15,
+  },
+  replyButtonText: {
+    color: '#007AFF',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  likesCount: {
+    fontSize: 12,
+    color: '#888',
+    marginLeft: 4,
+  },
+  replyingToContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#e0e0e0',
+    padding: 8,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+  },
+  replyingToText: {
+    fontSize: 14,
+    color: '#555',
+    fontStyle: 'italic',
+  },
+  commentInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    backgroundColor: '#f9f9f9',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  commentInput: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    maxHeight: 100,
+    fontSize: 16,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  sendButton: {
+    backgroundColor: '#007AFF',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
+
+export default styles;

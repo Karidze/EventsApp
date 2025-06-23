@@ -16,10 +16,10 @@ import {
   fetchBookmarkedEvents,
   updateBookmarkedEvent,
   fetchUserCreatedEvents,
-} from '../store/slices/eventsSlice';
-import EventCard from '../components/EventCard';
+} from '../../store/slices/eventsSlice';
+import EventCard from '../../components/EventCard';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
-import { supabase } from '../config/supabase';
+import { supabase } from '../../config/supabase';
 
 const BookmarksScreen = () => {
   const dispatch = useDispatch();

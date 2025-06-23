@@ -2,7 +2,6 @@ import React, { useEffect, useCallback, useState, useRef } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   FlatList,
   ActivityIndicator,
   Alert,
@@ -19,17 +18,13 @@ import {
   PanResponder,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchEvents, clearEventsError, fetchAllCategories, toggleBookmark } from '../store/slices/eventsSlice';
-import EventCard from '../components/EventCard';
+import { fetchEvents, clearEventsError, fetchAllCategories, toggleBookmark } from '../../store/slices/eventsSlice';
+import EventCard from '../../components/EventCard';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-const { width } = Dimensions.get('window');
-
-const SLIDER_WIDTH_IN_MODAL = width * 0.8;
-const SLIDER_PADDING_HORIZONTAL = 40;
-const SLIDER_EFFECTIVE_TRACK_WIDTH = SLIDER_WIDTH_IN_MODAL - SLIDER_PADDING_HORIZONTAL;
-const THUMB_SIZE = 20; // Уменьшенный размер ползунка
+// Импортируем стили из отдельного файла
+import { SLIDER_WIDTH_IN_MODAL, SLIDER_PADDING_HORIZONTAL, SLIDER_EFFECTIVE_TRACK_WIDTH, THUMB_SIZE, styles } from './HomeScreenStyles';
 
 const HomeScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -41,7 +36,7 @@ const HomeScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
-  const slideAnim = useState(new Animated.Value(-width))[0];
+  const slideAnim = useState(new Animated.Value(-Dimensions.get('window').width))[0]; // Используем Dimensions.get('window').width напрямую здесь
 
   const [citySearchQuery, setCitySearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState(null);
@@ -187,7 +182,7 @@ const HomeScreen = ({ navigation }) => {
   }, [error, dispatch]);
 
   const openFilterModal = () => {
-    slideAnim.setValue(-width);
+    slideAnim.setValue(-Dimensions.get('window').width); // Используем Dimensions.get('window').width напрямую здесь
     setIsFilterModalVisible(true);
     Animated.timing(slideAnim, {
       toValue: 0,
@@ -198,7 +193,7 @@ const HomeScreen = ({ navigation }) => {
 
   const closeFilterModal = () => {
     Animated.timing(slideAnim, {
-      toValue: -width,
+      toValue: -Dimensions.get('window').width, // Используем Dimensions.get('window').width напрямую здесь
       duration: 300,
       useNativeDriver: true,
     }).start(() => setIsFilterModalVisible(false));
@@ -589,336 +584,5 @@ const HomeScreen = ({ navigation }) => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  safeAreaContainer: {
-    flex: 1,
-    backgroundColor: '#FFF8F0',
-    paddingTop: 0,
-  },
-  header: {
-    backgroundColor: '#FFF8F0',
-    paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 25 : 25,
-    paddingBottom: 25,
-    borderBottomWidth: 0,
-    elevation: 0,
-    shadowOpacity: 0,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  searchFilterContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 10,
-    paddingHorizontal: 5,
-  },
-  filterButtonInsideSearch: {
-    padding: 10,
-    marginRight: 5,
-  },
-  searchInput: {
-    flex: 1,
-    height: 50,
-    fontSize: 16,
-    color: '#333',
-    paddingHorizontal: 10,
-  },
-  categoriesScrollView: {
-    marginHorizontal: -5,
-    marginTop: 5,
-  },
-  categoriesContent: {
-    paddingHorizontal: 5,
-  },
-  categoryButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    backgroundColor: '#FFEBCC',
-    borderWidth: 1,
-    borderColor: '#FFDDAA',
-    marginHorizontal: 5,
-  },
-  activeCategoryButton: {
-    backgroundColor: '#FF9933',
-    borderColor: '#FF9933',
-  },
-  categoryButtonText: {
-    color: '#664422',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  activeCategoryButtonText: {
-    color: '#fff',
-  },
-  loadingSpinner: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  noEventsText: {
-    flex: 1,
-    textAlign: 'center',
-    marginTop: 50,
-    fontSize: 18,
-    color: '#888',
-  },
-  listContent: {
-    paddingBottom: 20,
-    paddingHorizontal: 10,
-    paddingTop: 10,
-  },
-  filterModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-    alignItems: 'stretch',
-    flexDirection: 'row-reverse',
-  },
-  modalOverlayBackground: {
-    flex: 1,
-    height: '100%',
-  },
-  filterModalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 0,
-    width: width * 0.8,
-    height: '100%',
-    elevation: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: -5, height: 0 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-  },
-  modalHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 20,
-    paddingHorizontal: 20,
-    marginBottom: 25,
-  },
-  modalBackButton: {
-    zIndex: 10,
-    padding: 5,
-    marginRight: 10,
-  },
-  filterModalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 0,
-    textAlign: 'left',
-    color: '#333',
-  },
-  modalScrollView: {
-    flex: 1,
-  },
-  modalScrollContent: {
-    paddingBottom: 10,
-  },
-  modalFooter: {
-    padding: 20,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  filterSection: {
-    marginBottom: 20,
-    paddingHorizontal: 20,
-  },
-  filterSectionHeader: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#333',
-  },
-  cityFilterInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-  },
-  cityFilterInput: {
-    flex: 1,
-    height: 50,
-    fontSize: 16,
-    color: '#333',
-    paddingRight: 10,
-  },
-  mapIconModal: {
-    padding: 5,
-  },
-  datePickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    padding: 12,
-  },
-  datePickerButtonText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  timeRangeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  timePickerButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    padding: 12,
-    flex: 1,
-    marginHorizontal: 5,
-  },
-  timePickerButtonText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  timeSeparator: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#555',
-    marginHorizontal: 10,
-  },
-  priceRangeText: {
-    fontSize: 16,
-    color: '#333',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  priceInputsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  priceInput: {
-    width: '45%',
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    fontSize: 16,
-    color: '#333',
-    textAlign: 'center',
-  },
-  priceSeparator: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#555',
-  },
-  customSliderContainer: {
-    height: THUMB_SIZE,
-    justifyContent: 'center',
-    alignSelf: 'stretch',
-    position: 'relative',
-    width: SLIDER_EFFECTIVE_TRACK_WIDTH + THUMB_SIZE,
-    marginLeft: -THUMB_SIZE / 2,
-  },
-  trackBase: {
-    position: 'absolute',
-    height: 4,
-    backgroundColor: '#D3D3D3',
-    borderRadius: 2,
-    left: THUMB_SIZE / 2,
-    right: THUMB_SIZE / 2,
-  },
-  filledTrack: {
-    position: 'absolute',
-    height: 4,
-    backgroundColor: '#FF9933',
-    borderRadius: 2,
-  },
-  thumb: {
-    position: 'absolute',
-    width: THUMB_SIZE,
-    height: THUMB_SIZE,
-    borderRadius: THUMB_SIZE / 2,
-    backgroundColor: '#FF9933',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    zIndex: 10,
-    left: 0,
-  },
-  modalCategoriesScrollView: {
-    marginHorizontal: -5,
-    marginBottom: 20,
-  },
-  modalCategoriesContent: {
-    paddingHorizontal: 15,
-  },
-  modalCategoryButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    backgroundColor: '#f0f0f0',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    marginHorizontal: 5,
-  },
-  modalActiveCategoryButton: {
-    backgroundColor: '#FF9933',
-    borderColor: '#FF9933',
-  },
-  modalCategoryButtonText: {
-    color: '#555',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  modalActiveCategoryButtonText: {
-    color: '#fff',
-  },
-  clearFiltersButton: {
-    backgroundColor: '#eee',
-    borderRadius: 10,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    flex: 1,
-    marginRight: 10,
-  },
-  clearFiltersButtonText: {
-    color: '#555',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  applyFiltersButton: {
-    backgroundColor: '#FF9933',
-    borderRadius: 10,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-    flex: 1,
-    marginLeft: 10,
-  },
-  applyFiltersButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-});
 
 export default HomeScreen;

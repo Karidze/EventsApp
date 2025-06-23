@@ -6,8 +6,8 @@ import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
 
 import AuthNavigator from './AuthStack';
 import TabNavigator from './TabNavigator';
-import CommentsScreen from '../screens/CommentsScreen';
-import EventDetailScreen from '../screens/EventDetailScreen';
+import CommentsScreen from '../screens/CommentsScreen/CommentsScreen';
+import EventDetailScreen from '../screens/EventDetailScreen/EventDetailScreen';
 
 import useAuthSession from '../hooks/useAuthSession';
 
@@ -16,7 +16,7 @@ const Stack = createNativeStackNavigator();
 const AppNavigator = () => {
   useAuthSession();
 
-  const { user, isLoading } = useSelector((state) => state.auth);
+  const { isAuthenticated, isLoading } = useSelector((state) => state.auth);
 
   if (isLoading) {
     return (
@@ -30,11 +30,12 @@ const AppNavigator = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {user ? (
+        {isAuthenticated ? (
           <Stack.Screen name="Main" component={TabNavigator} />
         ) : (
           <Stack.Screen name="Auth" component={AuthNavigator} />
         )}
+
         <Stack.Screen
           name="Comments"
           component={CommentsScreen}
@@ -48,7 +49,6 @@ const AppNavigator = () => {
           name="EventDetail"
           component={EventDetailScreen}
           options={{
-            // Возвращаем headerShown: false, чтобы использовать кастомный заголовок
             headerShown: false,
           }}
         />
