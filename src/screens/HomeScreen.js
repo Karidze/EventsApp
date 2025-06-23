@@ -26,8 +26,10 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 
 const { width } = Dimensions.get('window');
 
-const SLIDER_FULL_WIDTH = width * 0.8 - 40;
-const THUMB_SIZE = 30;
+const SLIDER_WIDTH_IN_MODAL = width * 0.8;
+const SLIDER_PADDING_HORIZONTAL = 40;
+const SLIDER_EFFECTIVE_TRACK_WIDTH = SLIDER_WIDTH_IN_MODAL - SLIDER_PADDING_HORIZONTAL;
+const THUMB_SIZE = 20; // Уменьшенный размер ползунка
 
 const HomeScreen = ({ navigation }) => {
   const dispatch = useDispatch();
@@ -54,13 +56,15 @@ const HomeScreen = ({ navigation }) => {
   const [maxPrice, setMaxPrice] = useState(1000);
 
   const minThumbX = useRef(new Animated.Value(0)).current;
-  const maxThumbX = useRef(new Animated.Value(SLIDER_FULL_WIDTH)).current;
+  const maxThumbX = useRef(new Animated.Value(SLIDER_EFFECTIVE_TRACK_WIDTH)).current;
 
   const _minPrice = useRef(minPrice);
   const _maxPrice = useRef(maxPrice);
+
   useEffect(() => {
     _minPrice.current = minPrice;
   }, [minPrice]);
+
   useEffect(() => {
     _maxPrice.current = maxPrice;
   }, [maxPrice]);
@@ -74,19 +78,21 @@ const HomeScreen = ({ navigation }) => {
         minThumbX.setValue(0);
       },
       onPanResponderMove: (evt, gestureState) => {
-        let newX = gestureState.dx;
-        const currentMaxThumbPos = maxThumbX._value;
-        const maxAllowedX = currentMaxThumbPos - THUMB_SIZE;
-        newX = Math.max(0, Math.min(newX, maxAllowedX));
-        minThumbX.setValue(newX);
+        let newAbsoluteX = minThumbX._offset + gestureState.dx;
 
-        const calculatedPrice = Math.round((minThumbX._offset + minThumbX._value) / SLIDER_FULL_WIDTH * 1000);
-        setMinPrice(Math.max(0, Math.min(calculatedPrice, _maxPrice.current)));
+        const currentMaxThumbPos = maxThumbX._value;
+        const maxAllowedXForMin = currentMaxThumbPos - THUMB_SIZE;
+
+        const constrainedX = Math.max(0, Math.min(newAbsoluteX, maxAllowedXForMin));
+        minThumbX.setValue(constrainedX - minThumbX._offset);
+
+        const calculatedPrice = Math.round((constrainedX / SLIDER_EFFECTIVE_TRACK_WIDTH) * 1000);
+        setMinPrice(Math.min(Math.max(calculatedPrice, 0), _maxPrice.current));
       },
       onPanResponderRelease: () => {
         minThumbX.flattenOffset();
-        const finalPrice = Math.round((minThumbX._value / SLIDER_FULL_WIDTH) * 1000);
-        setMinPrice(Math.max(0, Math.min(finalPrice, _maxPrice.current)));
+        const finalPrice = Math.round((minThumbX._value / SLIDER_EFFECTIVE_TRACK_WIDTH) * 1000);
+        setMinPrice(Math.min(Math.max(finalPrice, 0), _maxPrice.current));
       },
     })
   ).current;
@@ -94,38 +100,46 @@ const HomeScreen = ({ navigation }) => {
   const maxThumbPanResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        return Math.abs(gestureState.dx) > 2 || Math.abs(gestureState.dy) > 2;
+      },
       onPanResponderGrant: () => {
         maxThumbX.setOffset(maxThumbX._value);
         maxThumbX.setValue(0);
       },
       onPanResponderMove: (evt, gestureState) => {
-        let newX = gestureState.dx;
-        const currentMinThumbPos = minThumbX._value;
-        const minAllowedX = currentMinThumbPos + THUMB_SIZE;
-        const absoluteNewX = maxThumbX._offset + newX;
-        const constrainedAbsoluteX = Math.max(minAllowedX, Math.min(absoluteNewX, SLIDER_FULL_WIDTH));
-        newX = constrainedAbsoluteX - maxThumbX._offset;
-        maxThumbX.setValue(newX);
+        let newAbsoluteX = maxThumbX._offset + gestureState.dx;
 
-        const calculatedPrice = Math.round((maxThumbX._offset + maxThumbX._value) / SLIDER_FULL_WIDTH * 1000);
-        setMaxPrice(Math.min(1000, Math.max(calculatedPrice, _minPrice.current)));
+        const currentMinThumbPos = minThumbX._value;
+        const minAllowedXForMax = currentMinThumbPos + THUMB_SIZE;
+
+        const constrainedX = Math.max(minAllowedXForMax, Math.min(newAbsoluteX, SLIDER_EFFECTIVE_TRACK_WIDTH));
+        maxThumbX.setValue(constrainedX - maxThumbX._offset);
+
+        const calculatedPrice = Math.round((constrainedX / SLIDER_EFFECTIVE_TRACK_WIDTH) * 1000);
+        setMaxPrice(Math.max(_minPrice.current, Math.min(calculatedPrice, 1000)));
       },
       onPanResponderRelease: () => {
         maxThumbX.flattenOffset();
-        const finalPrice = Math.round((maxThumbX._value / SLIDER_FULL_WIDTH) * 1000);
-        setMaxPrice(Math.min(1000, Math.max(finalPrice, _minPrice.current)));
+        const finalPrice = Math.round((maxThumbX._value / SLIDER_EFFECTIVE_TRACK_WIDTH) * 1000);
+        setMaxPrice(Math.max(_minPrice.current, Math.min(finalPrice, 1000)));
       },
     })
   ).current;
 
   useEffect(() => {
-    minThumbX.setValue((minPrice / 1000) * SLIDER_FULL_WIDTH);
-  }, [minPrice, SLIDER_FULL_WIDTH, minThumbX]);
+    const newMinX = (minPrice / 1000) * SLIDER_EFFECTIVE_TRACK_WIDTH;
+    if (Math.abs(minThumbX._value - newMinX) > 1) {
+      minThumbX.setValue(newMinX);
+    }
+  }, [minPrice, SLIDER_EFFECTIVE_TRACK_WIDTH, minThumbX]);
 
   useEffect(() => {
-    maxThumbX.setValue((maxPrice / 1000) * SLIDER_FULL_WIDTH);
-  }, [maxPrice, SLIDER_FULL_WIDTH, maxThumbX]);
+    const newMaxX = (maxPrice / 1000) * SLIDER_EFFECTIVE_TRACK_WIDTH;
+    if (Math.abs(maxThumbX._value - newMaxX) > 1) {
+      maxThumbX.setValue(newMaxX);
+    }
+  }, [maxPrice, SLIDER_EFFECTIVE_TRACK_WIDTH, maxThumbX]);
 
   useEffect(() => {
     dispatch(fetchAllCategories());
@@ -230,7 +244,6 @@ const HomeScreen = ({ navigation }) => {
       Alert.alert('Success', `Event "${event.title}" ${event.is_bookmarked ? 'removed from' : 'added to'} your favorites.`);
     } catch (err) {
       Alert.alert('Error', `Failed to update bookmark: ${err.message}`);
-      console.error('Bookmark toggle error:', err);
     }
   }, [dispatch, userId]);
 
@@ -259,7 +272,11 @@ const HomeScreen = ({ navigation }) => {
     setMinPrice(0);
     setMaxPrice(1000);
     minThumbX.setValue(0);
-    maxThumbX.setValue(SLIDER_FULL_WIDTH);
+    maxThumbX.setValue(SLIDER_EFFECTIVE_TRACK_WIDTH);
+  };
+
+  const handleApplyFilters = () => {
+    closeFilterModal();
   };
 
   const isAllActive = selectedCategoryIds.length === 0;
@@ -455,16 +472,16 @@ const HomeScreen = ({ navigation }) => {
                       styles.filledTrack,
                       {
                         left: minThumbX.interpolate({
-                          inputRange: [0, SLIDER_FULL_WIDTH],
-                          outputRange: [0, SLIDER_FULL_WIDTH],
+                          inputRange: [0, SLIDER_EFFECTIVE_TRACK_WIDTH],
+                          outputRange: [0, SLIDER_EFFECTIVE_TRACK_WIDTH],
                           extrapolate: 'clamp',
                         }),
                         width: Animated.add(
                           maxThumbX,
                           Animated.multiply(minThumbX, -1)
                         ).interpolate({
-                          inputRange: [0, SLIDER_FULL_WIDTH],
-                          outputRange: [0, SLIDER_FULL_WIDTH],
+                          inputRange: [0, SLIDER_EFFECTIVE_TRACK_WIDTH],
+                          outputRange: [0, SLIDER_EFFECTIVE_TRACK_WIDTH],
                           extrapolate: 'clamp',
                         }),
                       },
@@ -540,8 +557,8 @@ const HomeScreen = ({ navigation }) => {
                 <Text style={styles.clearFiltersButtonText}>Clear All Filters</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.closeModalButton} onPress={closeFilterModal}>
-                <Text style={styles.closeModalButtonText}>Apply Filters</Text>
+              <TouchableOpacity style={styles.applyFiltersButton} onPress={handleApplyFilters}>
+                <Text style={styles.applyFiltersButtonText}>Apply Filters</Text>
               </TouchableOpacity>
             </View>
           </Animated.View>
@@ -714,6 +731,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#eee',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
   filterSection: {
     marginBottom: 20,
@@ -811,15 +830,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignSelf: 'stretch',
     position: 'relative',
-    marginHorizontal: THUMB_SIZE / 2,
+    width: SLIDER_EFFECTIVE_TRACK_WIDTH + THUMB_SIZE,
+    marginLeft: -THUMB_SIZE / 2,
   },
   trackBase: {
     position: 'absolute',
     height: 4,
     backgroundColor: '#D3D3D3',
     borderRadius: 2,
-    left: 0,
-    right: 0,
+    left: THUMB_SIZE / 2,
+    right: THUMB_SIZE / 2,
   },
   filledTrack: {
     position: 'absolute',
@@ -841,7 +861,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     zIndex: 10,
-    left: -THUMB_SIZE / 2,
+    left: 0,
   },
   modalCategoriesScrollView: {
     marginHorizontal: -5,
@@ -870,6 +890,34 @@ const styles = StyleSheet.create({
   },
   modalActiveCategoryButtonText: {
     color: '#fff',
+  },
+  clearFiltersButton: {
+    backgroundColor: '#eee',
+    borderRadius: 10,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 10,
+  },
+  clearFiltersButtonText: {
+    color: '#555',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  applyFiltersButton: {
+    backgroundColor: '#FF9933',
+    borderRadius: 10,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    flex: 1,
+    marginLeft: 10,
+  },
+  applyFiltersButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
