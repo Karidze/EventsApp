@@ -4,7 +4,7 @@ EventsApp to mobilna aplikacja stworzona w React Native z wykorzystaniem Expo. U
 
 ## Funkcjonalności
 
-- Rejestracja i logowanie użytkownika (tymczasowo bez Firebase)
+- Rejestracja i logowanie użytkownika (Supabase)
 - Dodawanie nowych wydarzeń
 - Przeglądanie wydarzeń (w tym przeszłych)
 - Usuwanie wydarzeń
