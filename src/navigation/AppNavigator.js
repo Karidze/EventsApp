@@ -48,6 +48,7 @@ const AppNavigator = () => {
           name="EventDetail"
           component={EventDetailScreen}
           options={{
+            // Возвращаем headerShown: false, чтобы использовать кастомный заголовок
             headerShown: false,
           }}
         />

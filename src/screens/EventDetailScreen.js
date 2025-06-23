@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   StatusBar,
   TouchableOpacity,
   Alert,
@@ -24,11 +23,15 @@ import {
   updateBookmarkedEvent,
 } from '../store/slices/eventsSlice';
 import { supabase } from '../config/supabase';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const HEADER_VERTICAL_PADDING = 25;
 
 const EventDetailScreen = ({ route }) => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { eventId } = route.params;
+  const insets = useSafeAreaInsets();
 
   const { selectedEvent, isLoading, error, allCategories, bookmarkedEvents } = useSelector((state) => state.events);
   const { session } = useSelector((state) => state.auth);
@@ -158,7 +161,7 @@ const EventDetailScreen = ({ route }) => {
     time,
     location,
     event_price,
-    imageUrl,
+    image_url,
     category_ids,
     profiles,
     is_bookmarked,
@@ -189,26 +192,26 @@ const EventDetailScreen = ({ route }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safeAreaContainer}>
+    <View style={styles.mainContainer}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF8F0" />
 
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={28} color="#333" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Event Details</Text>
-          <TouchableOpacity onPress={handleBookmarkToggle} style={styles.bookmarkIcon}>
-            <Ionicons
-              name={is_bookmarked ? 'bookmark' : 'bookmark-outline'}
-              size={28}
-              color={is_bookmarked ? '#FF9933' : '#333'}
-            />
-          </TouchableOpacity>
-        </View>
+      <View style={[styles.header, { paddingTop: insets.top + HEADER_VERTICAL_PADDING }]}>
+        <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
+          <Ionicons name="arrow-back" size={28} color="#333" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Event Details</Text>
+        <TouchableOpacity onPress={handleBookmarkToggle} style={styles.bookmarkIcon}>
+          <Ionicons
+            name={is_bookmarked ? 'bookmark' : 'bookmark-outline'}
+            size={28}
+            color={is_bookmarked ? '#FF9933' : '#333'}
+          />
+        </TouchableOpacity>
+      </View>
 
-        {imageUrl && (
-          <Image source={{ uri: imageUrl }} style={styles.eventImage} resizeMode="cover" />
+      <ScrollView style={styles.scrollView}>
+        {image_url && (
+          <Image source={{ uri: image_url }} style={styles.eventImage} resizeMode="cover" />
         )}
 
         <View style={styles.contentContainer}>
@@ -264,15 +267,14 @@ const EventDetailScreen = ({ route }) => {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeAreaContainer: {
+  mainContainer: {
     flex: 1,
     backgroundColor: '#FFF8F0',
-    paddingTop: 0,
   },
   scrollView: {
     flex: 1,
@@ -281,12 +283,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 20,
     paddingBottom: 15,
     backgroundColor: '#FFF8F0',
     borderBottomWidth: 0,
     elevation: 0,
     shadowOpacity: 0,
+    justifyContent: 'space-between',
+    minHeight: 60,
   },
   backButton: {
     paddingRight: 10,
@@ -296,12 +299,8 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
-    flex: 1,
-    textAlign: 'center',
   },
   bookmarkIcon: {
-    marginLeft: 'auto',
-    paddingLeft: 10,
     zIndex: 1,
   },
   eventImage: {
